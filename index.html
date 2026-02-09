@@ -1,56 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="description" content="Find latest jobs in Zambia. Job Search Zambia connects job seekers to employers. Also offering professional CV and application letter services for K25.">
+<meta name="keywords" content="Zambia jobs, Kabwe jobs, Lusaka jobs, internships Zambia, CV writing Zambia">
+
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Job Search Zambia</title>
+  <title>Zambian Jobs</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+<a href="https://wa.me/260760900819" class="whatsapp-float" target="_blank">
+  💬
+</a>
+<script src="firebase.js"></script>
+
+
+
+
 <body>
-
-  
-
-  <!-- Search Section -->
-  <section class="search-box">
-    <input type="text" id="keyword" placeholder="Keywords" />
-    <input t
 <header class="header">
-  <div class="menu" onclick="window.location.href='contact.html'">☰</div>
-  <h1>Job Search Zambia</h1>
-  <div class="search-icon">🔍</div>
+  <div class="brand">
+    <img src="logo.png" alt="Zambian Jobs Logo">
+    <span>Zambian Jobs</span>
+  </div>
+  <div class="header-actions">
+    <button id="darkToggle">🌙</button>
+  </div>
 </header>
-ype="text" id="location" placeholder="Kabwe" />
-    <label class="remote">
-      <input type="checkbox" id="remoteOnly" /> Remote positions only
-    </label>
 
-    <select id="category">
-      <option value="">Choose a category...</option>
-      <option value="IT">IT</option>
-      <option value="Education">Education</option>
-      <option value="Health">Health</option>
-      <option value="Finance">Finance</option>
-    </select>
+<!-- Search Card -->
+<section class="search-card">
+  <div class="search-row">
+    <input type="text" id="keyword" placeholder="Job title or company">
+    <input type="text" id="location" placeholder="Location (e.g. Kabwe)">
+  </div>
 
-    <button onclick="searchJobs()">Search Jobs</button>
-  </section>
+  <label>
+    <input type="checkbox" id="remoteOnly"> Remote only
+  </label>
 
-  <!-- Job Types -->
-  <section class="job-types">
-    <label><input type="checkbox" value="Consultancy" checked /> Consultancy</label>
-    <label><input type="checkbox" value="Contract" checked /> Contract</label>
-    <label><input type="checkbox" value="Freelance" checked /> Freelance</label>
-    <label><input type="checkbox" value="Full Time" checked /> Full Time</label>
-    <label><input type="checkbox" value="Internship" checked /> Internship</label>
-    <label><input type="checkbox" value="Part Time" checked /> Part Time</label>
-    <label><input type="checkbox" value="Temporary" checked /> Temporary</label>
-    <label><input type="checkbox" value="Volunteer" checked /> Volunteer</label>
-  </section>
+  <select id="category">
+    <option value="">All categories</option>
+    <option value="IT">IT</option>
+    <option value="Education">Education</option>
+    <option value="Health">Health</option>
+    <option value="Finance">Finance</option>
+  </select>
 
-  <p id="resultCount">Search completed. Found 0 matching records.</p>
+  <button onclick="searchJobs()">Search Jobs</button>
+</section>
 
-  <!-- Jobs List -->
-  <section id="jobs"></section>
+<!-- Job Types -->
+<section class="job-types">
+  <label><input type="checkbox" value="Consultancy" checked> Consultancy</label>
+  <label><input type="checkbox" value="Contract" checked> Contract</label>
+  <label><input type="checkbox" value="Freelance" checked> Freelance</label>
+  <label><input type="checkbox" value="Full Time" checked> Full Time</label>
+  <label><input type="checkbox" value="Internship" checked> Internship</label>
+  <label><input type="checkbox" value="Part Time" checked> Part Time</label>
+  <label><input type="checkbox" value="Temporary" checked> Temporary</label>
+  <label><input type="checkbox" value="Volunteer" checked> Volunteer</label>
+</section>
+
+<p id="resultCount">Search completed. Found 0 matching records.</p>
+
+<section id="jobs"></section>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <button class="active" onclick="location.href='index.html'">🏠<span>Home</span></button>
+  <button onclick="location.href='contact.html'">📞<span>Contact</span></button>
+  <button onclick="location.href='login.html'">🔐<span>Admin</span></button>
+</nav>
+
+<!-- WhatsApp -->
+<a href="https://wa.me/260760900819" class="whatsapp-float" target="_blank">💬</a>
+
+<script src="script.js"></script>
+<script>
+/* Dark mode toggle */
+const toggle = document.getElementById("darkToggle");
+toggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+});
+
+/* Load saved mode */
+if (localStorage.getItem("darkMode") === "true") {
+  document.body.classList.add("dark");
+}
+</script>
+
+
 
   <script src="script.js"></script>
 </body>
