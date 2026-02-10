@@ -95,5 +95,45 @@ if (localStorage.getItem("darkMode") === "true") {
 
 
   <script src="script.js"></script>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZwl2Vg4J4J4WQZBRyTXL6zNhRPtDOWlc",
+    authDomain: "zambian-jobs-ce081.firebaseapp.com",
+    projectId: "zambian-jobs-ce081",
+    storageBucket: "zambian-jobs-ce081.appspot.com",
+    messagingSenderId: "1022758849145",
+    appId: "1:1022758849145:web:dd571554ab04334f41e2a8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const jobsContainer = document.getElementById("jobs");
+
+  async function loadJobs() {
+    const querySnapshot = await getDocs(collection(db, "jobs"));
+    jobsContainer.innerHTML = "";
+    querySnapshot.forEach((doc) => {
+      const job = doc.data();
+      jobsContainer.innerHTML += `
+        <div class="job-card">
+          <h3>${job.title}</h3>
+          <p><strong>${job.company}</strong> — ${job.location}</p>
+          <p>${job.type} | ${job.category}</p>
+        </div>
+      `;
+    });
+  }
+
+  loadJobs();
+    <div id="jobs"></div>
+
+    
+</script>
+
 </body>
 </html>
+
