@@ -1,28 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin - Post Job</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard — Zambian Jobs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #16a34a;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .logout {
+      background: #dc2626;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
 
-  <section class="search-box">
-    <h2>Post a Job</h2>
-    <input id="title" placeholder="Job Title">
-    <input id="company" placeholder="Company Name">
-    <input id="location" placeholder="Location">
-    <select id="type">
-      <option>Full Time</option>
-      <option>Part Time</option>
-      <option>Internship</option>
-      <option>Contract</option>
-      <option>Temporary</option>
-      <option>Volunteer</option>
-    </select>
-    <input id="category" placeholder="Category">
-    <button onclick="addJob()">Post Job</button>
-  </section>
+<div class="container">
+  <h2>Post a Job</h2>
 
-  <script src="admin.js"></script>
+  <input id="title" placeholder="Job Title" />
+  <input id="company" placeholder="Company Name" />
+  <input id="location" placeholder="Location (e.g. Lusaka)" />
+
+  <select id="type">
+    <option>Full Time</option>
+    <option>Part Time</option>
+    <option>Contract</option>
+    <option>Internship</option>
+    <option>Temporary</option>
+    <option>Volunteer</option>
+    <option>Freelance</option>
+  </select>
+
+  <select id="category">
+    <option value="">Select Category</option>
+    <option>IT</option>
+    <option>Finance</option>
+    <option>Health</option>
+    <option>Education</option>
+    <option>Engineering</option>
+    <option>Sales</option>
+    <option>Other</option>
+  </select>
+
+  <button onclick="addJob()">Post Job</button>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<script>
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) window.location.href = "login.html";
+});
+
+function addJob() {
+  const job = {
+    title: title.value,
+    company: company.value,
+    location: location.value,
+    type: type.value,
+    category: category.value,
+    date: "Posted just now",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  db.collection("jobs").add(job).then(() => {
+    alert("✅ Job posted successfully!");
+    title.value = "";
+    company.value = "";
+    location.value = "";
+    category.value = "";
+  });
+}
+
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  });
+}
+</script>
+
 </body>
 </html>
