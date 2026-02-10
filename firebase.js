@@ -1,7 +1,4 @@
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
+// Firebase core
 const firebaseConfig = {
   apiKey: "AIzaSyCZwl2Vg4J4J4WQZBRyTXL6zNhRPtDOWlc",
   authDomain: "zambian-jobs-ce081.firebaseapp.com",
@@ -14,4 +11,4 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-</script>
+const auth = firebase.auth();
