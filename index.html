@@ -35,6 +35,8 @@
     <input type="text" id="keyword" placeholder="Job title or company">
     <input type="text" id="location" placeholder="Location (e.g. Kabwe)">
   </div>
+<h2>Latest Jobs</h2>
+<div id="jobs"></div>
 
   <label>
     <input type="checkbox" id="remoteOnly"> Remote only
@@ -95,15 +97,15 @@ if (localStorage.getItem("darkMode") === "true") {
 
 
   <script src="script.js"></script>
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCZwl2Vg4J4J4WQZBRyTXL6zNhRPtDOWlc",
     authDomain: "zambian-jobs-ce081.firebaseapp.com",
     projectId: "zambian-jobs-ce081",
-    storageBucket: "zambian-jobs-ce081.appspot.com",
+    storageBucket: "zambian-jobs-ce081.firebasestorage.app",
     messagingSenderId: "1022758849145",
     appId: "1:1022758849145:web:dd571554ab04334f41e2a8"
   };
@@ -111,29 +113,36 @@ if (localStorage.getItem("darkMode") === "true") {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const jobsContainer = document.getElementById("jobs");
+  const jobsDiv = document.getElementById("jobs");
 
   async function loadJobs() {
-    const querySnapshot = await getDocs(collection(db, "jobs"));
-    jobsContainer.innerHTML = "";
-    querySnapshot.forEach((doc) => {
+    const q = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+
+    jobsDiv.innerHTML = "";
+
+    snapshot.forEach(doc => {
       const job = doc.data();
-      jobsContainer.innerHTML += `
-        <div class="job-card">
+      jobsDiv.innerHTML += `
+        <div style="background:#fff;padding:15px;margin:10px 0;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1)">
           <h3>${job.title}</h3>
-          <p><strong>${job.company}</strong> — ${job.location}</p>
-          <p>${job.type} | ${job.category}</p>
+          <p><strong>${job.company}</strong></p>
+          <p>${job.location}</p>
+          <p>${job.type} • ${job.category}</p>
         </div>
       `;
     });
   }
 
   loadJobs();
-    <div id="jobs"></div>
+</script>
+
+
 
     
 </script>
 
 </body>
 </html>
+
 
