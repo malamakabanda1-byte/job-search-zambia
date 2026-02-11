@@ -107,7 +107,6 @@ body {
   .search-box button {
     font-size: 15px;
   }
-}
 body.dark {
   background: #121212;
   color: #f1f1f1;
@@ -134,5 +133,6 @@ body.dark .bottom-nav {
   color: white;
   border-radius: 6px;
   text-decoration: none;
+}
 }
 
