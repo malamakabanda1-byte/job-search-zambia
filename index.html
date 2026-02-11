@@ -98,11 +98,13 @@ async function loadJobs() {
     <h3>${job.title}</h3>
     <p><strong>${job.company}</strong></p>
     <p>${job.location} • ${job.type}</p>
-    <small>${job.category}</small>
-    <br>
-    <a href="https://wa.me/260760900819?text=Hello,%20I%20want%20to%20apply%20for%20${job.title}%20at%20${job.company}" class="apply-btn">Apply via WhatsApp</a>
+    <small>${job.category}</small><br><br>
+
+    ${job.email ? `<a href="mailto:${job.email}" class="apply-btn">Apply via Email</a>` : ""}
+    ${job.phone ? `<a href="tel:${job.phone}" class="apply-btn">Call / WhatsApp Employer</a>` : ""}
   </div>
 `;
+
   
     });
 
@@ -131,5 +133,6 @@ if (localStorage.getItem("darkMode") === "true") {
 
 </body>
 </html>
+
 
 
