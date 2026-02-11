@@ -93,14 +93,17 @@ async function loadJobs() {
       const job = doc.data();
       count++;
 
-      jobsDiv.innerHTML += `
-        <div class="job-card">
-          <h3>${job.title}</h3>
-          <p><strong>${job.company}</strong></p>
-          <p>${job.location} • ${job.type}</p>
-          <small>${job.category}</small>
-        </div>
-      `;
+    jobsDiv.innerHTML += `
+  <div class="job-card">
+    <h3>${job.title}</h3>
+    <p><strong>${job.company}</strong></p>
+    <p>${job.location} • ${job.type}</p>
+    <small>${job.category}</small>
+    <br>
+    <a href="https://wa.me/260760900819?text=Hello,%20I%20want%20to%20apply%20for%20${job.title}%20at%20${job.company}" class="apply-btn">Apply via WhatsApp</a>
+  </div>
+`;
+  
     });
 
     resultCount.textContent = `Found ${count} job(s).`;
@@ -128,4 +131,5 @@ if (localStorage.getItem("darkMode") === "true") {
 
 </body>
 </html>
+
 
