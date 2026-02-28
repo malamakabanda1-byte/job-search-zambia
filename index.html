@@ -1,148 +1,582 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-S6QZM6MV82');
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zambian Jobs</title>
+    <style>
+        /* CSS STYLES */
+        :root {
+            --primary: #006400; /* Zambian Green */
+            --secondary: #ff8c00; /* Orange accent */
+            --bg-color: #f4f7f6;
+            --text-dark: #333;
+            --text-light: #666;
+            --white: #ffffff;
+        }
 
-  <meta charset="UTF-8" />
-  <meta name="description" content="Find latest jobs in Zambia. Job Search Zambia connects job seekers to employers. Also offering professional CV and application letter services for K25.">
-  <meta name="keywords" content="Zambia jobs, Kabwe jobs, Lusaka jobs, internships Zambia, CV writing Zambia">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zambian Jobs</title>
-  <link rel="stylesheet" href="style.css" />
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: var(--white);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Sidebar Overlay */
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 200;
+            top: 0;
+            left: 0;
+            background-color: #111;
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 60px;
+        }
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #818181;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .sidebar a:hover {
+            color: #f1f1f1;
+        }
+
+        .sidebar .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+        }
+
+        /* Main Container */
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        /* Page Sections */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+
+        /* Search Section */
+        .search-box {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-box input, .search-box select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .job-types {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .job-types label {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn {
+            background-color: var(--secondary);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #e07b00;
+        }
+
+        /* Job Listings */
+        .search-status {
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .job-card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .job-main h3 {
+            font-size: 18px;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .job-main p {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .job-meta {
+            text-align: right;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .job-meta .location { font-weight: bold; }
+        .job-meta .type { background: #eee; padding: 2px 5px; border-radius: 3px; display: inline-block;}
+        .job-meta .date { color: #999; }
+
+        .load-more {
+            background: #ddd;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        /* CV Promo Box */
+        .promo-box {
+            background-color: #e8f5e9;
+            border: 2px dashed var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .promo-box h4 { color: var(--primary); margin-bottom: 10px; }
+        .promo-links a {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 15px;
+            background: #25D366; /* WhatsApp Green */
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .promo-links a.email-btn { background: #d44638; }
+
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold;}
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .back-btn { background: #ccc; color: #333; margin-bottom: 15px; display: inline-block; }
+
+    </style>
 </head>
-
 <body>
-<header class="header">
-  <div class="brand">
-    <img src="logo.png" alt="Zambian Jobs Logo">
-    <span>Zambian Jobs</span>
-  </div>
-  <div class="header-actions">
-    <button id="darkToggle">🌙</button>
-  </div>
-</header>
 
-<section class="search-card">
-  <div class="search-row">
-    <input type="text" id="keyword" placeholder="Job title or company">
-    <input type="text" id="location" placeholder="Location (e.g. Kabwe)">
-  </div>
+    <header>
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="logo">Zambian Jobs</div>
+    </header>
 
-  <label>
-    <input type="checkbox" id="remoteOnly"> Remote only
-  </label>
+    <div id="mySidebar" class="sidebar">
+        <a href="javascript:void(0)" class="close-btn" onclick="toggleSidebar()">×</a>
+        <a href="#" onclick="navigate('home')">Home</a>
+        <a href="#" onclick="navigate('about')">About Us</a>
+        <a href="#" onclick="navigate('contact')">Contact Us</a>
+        <a href="#" onclick="navigate('admin')">Admin Post Job</a>
+    </div>
 
-  <select id="category">
-    <option value="">All categories</option>
-    <option value="IT">IT</option>
-    <option value="Education">Education</option>
-    <option value="Health">Health</option>
-    <option value="Finance">Finance</option>
-  </select>
+    <div class="container">
+        
+        <div id="home" class="page active">
+            <div class="search-box">
+                <input type="text" id="s-location" placeholder="Location (e.g. Lusaka, Ndola)">
+                <input type="text" id="s-keyword" placeholder="Keyword (e.g. Manager, Driver)">
+                <select id="s-category">
+                    <option value="">All Categories</option>
+                    <option value="Health">Health</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Education">Education</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Others">Others</option>
+                </select>
+                
+                <div class="job-types">
+                    <label><input type="checkbox" class="s-type" value="Full Time"> Full Time</label>
+                    <label><input type="checkbox" class="s-type" value="Part Time"> Part Time</label>
+                    <label><input type="checkbox" class="s-type" value="Contract"> Contract</label>
+                    <label><input type="checkbox" class="s-type" value="Temporary"> Temporary</label>
+                    <label><input type="checkbox" class="s-type" value="Tender"> Tender</label>
+                    <label><input type="checkbox" class="s-type" value="Other"> Other</label>
+                </div>
 
-  <button onclick="searchJobs()">Search Jobs</button>
-</section>
+                <button class="btn" onclick="searchJobs()">Search</button>
+            </div>
 
-<h2 style="margin:15px;">Latest Jobs</h2>
-<div id="jobs"></div>
+            <div id="search-status" class="search-status"></div>
+            <div id="job-list"></div>
+            <button id="load-more-btn" class="btn load-more" onclick="loadMore()">Load More</button>
+        </div>
 
-<p id="resultCount">Loading jobs...</p>
+        <div id="job-details" class="page">
+            <button class="btn back-btn" onclick="navigate('home')">← Back to Jobs</button>
+            <div id="details-content" style="background: white; padding: 20px; border-radius: 8px;">
+                </div>
+            
+            <div class="promo-box">
+                <h4>Get a Professional CV & Application Letter at K20 ONLY!</h4>
+                <p>Increase your chances of getting hired. Pay K20, send the screenshot to WhatsApp, and receive your professional CV or Letter within 5 minutes!</p>
+                <div class="promo-links">
+                    <a href="https://wa.me/260760900819?text=Hello,%20I%20have%20paid%20K20%20for%20a%20professional%20CV/Letter." target="_blank">WhatsApp Us (+260760900819)</a>
+                    <a href="mailto:malkamedia10@gmail.com" class="email-btn">Email Us</a>
+                </div>
+            </div>
+        </div>
 
-<section class="job-types">
-  <label><input type="checkbox" value="Consultancy" checked> Consultancy</label>
-  <label><input type="checkbox" value="Contract" checked> Contract</label>
-  <label><input type="checkbox" value="Freelance" checked> Freelance</label>
-  <label><input type="checkbox" value="Full Time" checked> Full Time</label>
-  <label><input type="checkbox" value="Internship" checked> Internship</label>
-  <label><input type="checkbox" value="Part Time" checked> Part Time</label>
-  <label><input type="checkbox" value="Temporary" checked> Temporary</label>
-  <label><input type="checkbox" value="Volunteer" checked> Volunteer</label>
-</section>
+        <div id="about" class="page">
+            <h2>About Zambian Jobs</h2><br>
+            <div style="background: white; padding: 20px; border-radius: 8px; line-height: 1.6;">
+                <p>Welcome to <strong>Zambian Jobs</strong>, the nation's premier professional bridge connecting top-tier talent with industry-leading employers across Zambia. </p><br>
+                <p><strong>What We Do</strong><br>
+                We understand that finding the right job—or the right candidate—can be challenging. Our platform simplifies this process by providing a clean, accessible, and highly targeted job portal. Whether you are looking for opportunities in Health, Finance, Education, Agriculture, or exploring Tenders and Contracts, we bring the latest verified opportunities directly to your fingertips.</p><br>
+                <p>Beyond connecting you with employers, we are dedicated to your career success. We offer rapid, highly professional CV and Application Letter crafting services at an unbeatable rate of K25, ensuring you always put your best foot forward in the competitive job market.</p>
+            </div>
+        </div>
 
-<nav class="bottom-nav">
-  <button class="active" onclick="location.href='index.html'">🏠<span>Home</span></button>
-  <button onclick="location.href='contact.html'">📞<span>Contact</span></button>
-  <button onclick="location.href='login.html'">🔐<span>Admin</span></button>
-</nav>
+        <div id="contact" class="page">
+            <h2>Contact Us</h2><br>
+            
+            <div class="promo-box">
+                <h4>Need a Professional CV & Letter? (K20 Only)</h4>
+                <p>Pay K20 and send the screenshot via WhatsApp to receive your documents in 5 minutes.</p>
+                <p><strong>WhatsApp / Call:</strong> +260760900819</p>
+                <p><strong>Email:</strong> malkamedia10@gmail.com</p>
+            </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+                <h3>Send us a message</h3><br>
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label>Email / Phone</label>
+                    <input type="text" placeholder="Enter contact info">
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea rows="4" placeholder="Write your message here..."></textarea>
+                </div>
+                <button class="btn" onclick="alert('Message Sent Successfully!')">Send</button>
+            </div>
+        </div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCZwl2Vg4J4J4WQZBRyTXL6zNhRPtDOWlc",
-  authDomain: "zambian-jobs-ce081.firebaseapp.com",
-  projectId: "zambian-jobs-ce081",
-  storageBucket: "zambian-jobs-ce081.firebasestorage.app",
-  messagingSenderId: "1022758849145",
-  appId: "1:1022758849145:web:dd571554ab04334f41e2a8"
-};
+        <div id="admin" class="page">
+            <div id="admin-login-section">
+                <h2>Admin Login</h2><br>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="admin-email" placeholder="Admin Email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="admin-pass" placeholder="Password">
+                    </div>
+                    <button class="btn" onclick="loginAdmin()">Login</button>
+                </div>
+            </div>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+            <div id="admin-dashboard-section" style="display: none;">
+                <h2>Post a New Job</h2><br>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <div class="form-group"><label>Job Title</label><input type="text" id="pj-title"></div>
+                    <div class="form-group"><label>Company Name</label><input type="text" id="pj-company"></div>
+                    <div class="form-group"><label>Location</label><input type="text" id="pj-location"></div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="pj-category">
+                            <option>Health</option><option>Finance</option><option>Education</option><option>Agriculture</option><option>Others</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="pj-type">
+                            <option>Full Time</option><option>Part Time</option><option>Contract</option><option>Temporary</option><option>Tender</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Description</label><textarea id="pj-desc" rows="4"></textarea></div>
+                    <button class="btn" onclick="postJob()">Post Job to Site</button>
+                    <button class="btn back-btn" style="margin-top:10px;" onclick="logoutAdmin()">Logout</button>
+                </div>
+            </div>
+        </div>
 
-const jobsDiv = document.getElementById("jobs");
-const resultCount = document.getElementById("resultCount");
+    </div>
 
-async function loadJobs() {
-  try {
-    const snapshot = await getDocs(collection(db, "jobs"));
-    jobsDiv.innerHTML = "";
-    let count = 0;
+    <script>
+        // --- DATA & STATE ---
+        // Some mock jobs so the app isn't empty when you first open it.
+        const mockJobs = [
+            { id: 1, title: "Registered Nurse", company: "Lusaka General Hospital", location: "Lusaka", category: "Health", type: "Full Time", date: "Posted 1 day ago", desc: "Looking for an experienced registered nurse for the night shift." },
+            { id: 2, title: "Accountant", company: "Zambia National Bank", location: "Ndola", category: "Finance", type: "Full Time", date: "Posted 2 days ago", desc: "Managing daily accounts and financial reporting." },
+            { id: 3, title: "High School Math Teacher", company: "Kabwe Trust School", location: "Kabwe", category: "Education", type: "Contract", date: "Posted 2 days ago", desc: "Teaching Grades 10-12 Mathematics." },
+            { id: 4, title: "Farm Manager", company: "AgriCorp Zambia", location: "Mkushi", category: "Agriculture", type: "Full Time", date: "Posted 3 days ago", desc: "Overseeing 500 hectares of maize production." },
+            { id: 5, title: "IT Support Specialist", company: "TechZambia", location: "Lusaka", category: "Others", type: "Part Time", date: "Posted 4 days ago", desc: "Providing hardware and software support to clients." },
+            { id: 6, title: "Data Entry Clerk", company: "Finance Solutions", location: "Kitwe", category: "Finance", type: "Temporary", date: "Posted 4 days ago", desc: "Temporary data entry for Q1 records." },
+            { id: 7, title: "Supply of Computers", company: "Ministry of Education", location: "Lusaka", category: "Education", type: "Tender", date: "Posted 5 days ago", desc: "Tender for the supply of 50 desktop computers." },
+            { id: 8, title: "Clinical Officer", company: "Rural Health Clinic", location: "Livingstone", category: "Health", type: "Contract", date: "Posted 5 days ago", desc: "Running daily outpatient clinic." },
+            { id: 9, title: "Security Guard", company: "SafeZambia", location: "Lusaka", category: "Others", type: "Full Time", date: "Posted 6 days ago", desc: "Nighttime security for office complex." },
+            { id: 10, title: "Agronomist", company: "SeedCo", location: "Choma", category: "Agriculture", type: "Full Time", date: "Posted 1 week ago", desc: "Advising farmers on seed varieties." }
+        ];
 
-    snapshot.forEach(doc => {
-      const job = doc.data();
-      count++;
+        let allJobs = [];
+        let filteredJobs = [];
+        let displayedCount = 8;
 
-    jobsDiv.innerHTML += `
-  <div class="job-card">
-    <h3>${job.title}</h3>
-    <p><strong>${job.company}</strong></p>
-    <p>${job.location} • ${job.type}</p>
-    <small>${job.category}</small><br><br>
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            // Load custom jobs from LocalStorage (Simulating a Database)
+            let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
+            allJobs = [...savedJobs, ...mockJobs]; // Combine user posted jobs with mock ones
+            filteredJobs = allJobs;
+            renderJobs();
+        };
 
-    ${job.email ? `<a href="mailto:${job.email}" class="apply-btn">Apply via Email</a>` : ""}
-    ${job.phone ? `<a href="tel:${job.phone}" class="apply-btn">Call / WhatsApp Employer</a>` : ""}
-  </div>
-`;
+        // --- NAVIGATION ---
+        function toggleSidebar() {
+            let sidebar = document.getElementById("mySidebar");
+            sidebar.style.width = sidebar.style.width === "250px" ? "0" : "250px";
+        }
 
-  
-    });
+        function navigate(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            toggleSidebar(); // Close menu after clicking
+            
+            if(pageId === 'home') {
+                document.getElementById('search-status').innerHTML = '';
+                filteredJobs = allJobs;
+                displayedCount = 8;
+                renderJobs();
+            }
+        }
 
-    resultCount.textContent = `Found ${count} job(s).`;
-    if (count === 0) resultCount.textContent = "No jobs found.";
-  } catch (err) {
-    resultCount.textContent = "Error loading jobs.";
-    console.error(err);
-  }
-}
+        // --- JOB RENDERING ---
+        function renderJobs() {
+            let html = '';
+            let jobsToShow = filteredJobs.slice(0, displayedCount);
 
-loadJobs();
+            jobsToShow.forEach(job => {
+                html += `
+                <div class="job-card" onclick="viewJob(${job.id})">
+                    <div class="job-main">
+                        <h3>${job.title}</h3>
+                        <p>${job.company}</p>
+                    </div>
+                    <div class="job-meta">
+                        <span class="location">${job.location}</span>
+                        <span class="type">${job.type}</span>
+                        <span class="date">${job.date}</span>
+                    </div>
+                </div>
+                `;
+            });
 
-/* Dark mode */
-const toggle = document.getElementById("darkToggle");
-toggle.onclick = () => {
-  document.body.classList.toggle("dark");
-  localStorage.setItem("darkMode", document.body.classList.contains("dark"));
-};
-if (localStorage.getItem("darkMode") === "true") {
-  document.body.classList.add("dark");
-}
-</script>
+            document.getElementById('job-list').innerHTML = html;
 
+            // Handle Load More Button
+            let loadBtn = document.getElementById('load-more-btn');
+            if (filteredJobs.length > displayedCount) {
+                loadBtn.style.display = 'block';
+            } else {
+                loadBtn.style.display = 'none';
+            }
+        }
 
+        function loadMore() {
+            displayedCount += 8;
+            renderJobs();
+        }
 
+        // --- SEARCH LOGIC ---
+        function searchJobs() {
+            let loc = document.getElementById('s-location').value.toLowerCase();
+            let key = document.getElementById('s-keyword').value.toLowerCase();
+            let cat = document.getElementById('s-category').value;
+            
+            // Get checked types
+            let checkedTypes = Array.from(document.querySelectorAll('.s-type:checked')).map(cb => cb.value);
+
+            filteredJobs = allJobs.filter(job => {
+                let matchLoc = job.location.toLowerCase().includes(loc);
+                let matchKey = job.title.toLowerCase().includes(key) || job.desc.toLowerCase().includes(key);
+                let matchCat = cat === "" || job.category === cat;
+                let matchType = checkedTypes.length === 0 || checkedTypes.includes(job.type);
+
+                return matchLoc && matchKey && matchCat && matchType;
+            });
+
+            displayedCount = 8;
+            renderJobs();
+
+            let statusBox = document.getElementById('search-status');
+            statusBox.innerHTML = `Search completed successfully. Found ${filteredJobs.length} matching job(s).`;
+        }
+
+        // --- VIEW JOB DETAILS ---
+        function viewJob(id) {
+            let job = allJobs.find(j => j.id === id);
+            if(!job) return;
+
+            let detailsHtml = `
+                <h2 style="color:var(--primary);">${job.title}</h2>
+                <h4 style="color:var(--text-light); margin-bottom:15px;">${job.company}</h4>
+                <p><strong>Location:</strong> ${job.location}</p>
+                <p><strong>Job Type:</strong> ${job.type}</p>
+                <p><strong>Category:</strong> ${job.category}</p>
+                <p><strong>Date:</strong> ${job.date}</p>
+                <hr style="margin: 15px 0;">
+                <h3>Job Description</h3><br>
+                <p style="line-height:1.6;">${job.desc}</p>
+            `;
+
+            document.getElementById('details-content').innerHTML = detailsHtml;
+            
+            // Switch view without opening sidebar
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById('job-details').classList.add('active');
+        }
+
+        // --- ADMIN SYSTEM ---
+        function loginAdmin() {
+            let email = document.getElementById('admin-email').value;
+            let pass = document.getElementById('admin-pass').value;
+
+            if (email === 'malkamedia10@gmail.com' && pass === '**********Mk2') {
+                document.getElementById('admin-login-section').style.display = 'none';
+                document.getElementById('admin-dashboard-section').style.display = 'block';
+            } else {
+                alert('Invalid Credentials!');
+            }
+        }
+
+        function logoutAdmin() {
+            document.getElementById('admin-email').value = '';
+            document.getElementById('admin-pass').value = '';
+            document.getElementById('admin-login-section').style.display = 'block';
+            document.getElementById('admin-dashboard-section').style.display = 'none';
+        }
+
+        function postJob() {
+            let title = document.getElementById('pj-title').value;
+            let company = document.getElementById('pj-company').value;
+            let location = document.getElementById('pj-location').value;
+            let category = document.getElementById('pj-category').value;
+            let type = document.getElementById('pj-type').value;
+            let desc = document.getElementById('pj-desc').value;
+
+            if(!title || !company || !location || !desc) {
+                alert("Please fill all fields.");
+                return;
+            }
+
+            let newJob = {
+                id: Date.now(), // Unique ID
+                title: title,
+                company: company,
+                location: location,
+                category: category,
+                type: type,
+                date: "Posted just now",
+                desc: desc
+            };
+
+            // Get existing saved jobs from local storage, add new one, save back
+            let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
+            savedJobs.unshift(newJob); // Add to beginning
+            localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
+
+            // Update live arrays
+            allJobs.unshift(newJob);
+            
+            alert("Job Posted Successfully!");
+            
+            // Clear form
+            document.getElementById('pj-title').value = '';
+            document.getElementById('pj-company').value = '';
+            document.getElementById('pj-location').value = '';
+            document.getElementById('pj-desc').value = '';
+
+            // Send back to home to see the job
+            navigate('home');
+        }
+
+    </script>
 </body>
 </html>
-
-
-
-
-
