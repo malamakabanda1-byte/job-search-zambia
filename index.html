@@ -3,9 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Find the latest jobs in Zambia. Health, Engineering, Finance, Education, and Agriculture jobs. Get professional CVs and Application letters for K20.">
-    <meta name="keywords" content="Zambia Jobs, Lusaka Jobs, Zambian Careers, Hiring Mines, CV Writing Zambia, Hiring in Zambia">
-    <meta name="author" content="Malka Media">
     <title>Zambian Jobs</title>
     <style>
         /* CSS STYLES */
@@ -265,7 +262,6 @@
                     <option value="Finance">Finance</option>
                     <option value="Education">Education</option>
                     <option value="Agriculture">Agriculture</option>
-                    <option value="Engineering">Engineering</option>
                     <option value="Others">Others</option>
                 </select>
                 
@@ -288,7 +284,8 @@
 
         <div id="job-details" class="page">
             <button class="btn back-btn" onclick="navigate('home')">← Back to Jobs</button>
-            <div id="details-content" style="background: white; padding: 20px; border-radius: 8px;"></div>
+            <div id="details-content" style="background: white; padding: 20px; border-radius: 8px;">
+                </div>
             
             <div class="promo-box">
                 <h4>Get a Professional CV & Application Letter at K20 ONLY!</h4>
@@ -306,7 +303,7 @@
                 <p>Welcome to <strong>Zambian Jobs</strong>, the nation's premier professional bridge connecting top-tier talent with industry-leading employers across Zambia. </p><br>
                 <p><strong>What We Do</strong><br>
                 We understand that finding the right job—or the right candidate—can be challenging. Our platform simplifies this process by providing a clean, accessible, and highly targeted job portal. Whether you are looking for opportunities in Health, Finance, Education, Agriculture, or exploring Tenders and Contracts, we bring the latest verified opportunities directly to your fingertips.</p><br>
-                <p>Beyond connecting you with employers, we are dedicated to your career success. We offer rapid, highly professional CV and Application Letter crafting services at an unbeatable rate of K25, ensuring you always put your best foot forward in the competitive job market.</p>
+                <p>Beyond connecting you with employers, we are dedicated to your career success. We offer rapid, highly professional CV and Application Letter crafting services at an unbeatable rate of K20, ensuring you always put your best foot forward in the competitive job market.</p>
             </div>
         </div>
 
@@ -383,6 +380,7 @@
 
     <script>
         // --- DATA & STATE ---
+        // Some mock jobs so the app isn't empty when you first open it.
         const mockJobs = [
             { id: 1, title: "Registered Nurse", company: "Lusaka General Hospital", location: "Lusaka", category: "Health", type: "Full Time", date: "Posted 1 day ago", desc: "Looking for an experienced registered nurse for the night shift." },
             { id: 2, title: "Accountant", company: "Zambia National Bank", location: "Ndola", category: "Finance", type: "Full Time", date: "Posted 2 days ago", desc: "Managing daily accounts and financial reporting." },
@@ -400,13 +398,16 @@
         let filteredJobs = [];
         let displayedCount = 8;
 
+        // --- INITIALIZATION ---
         window.onload = function() {
+            // Load custom jobs from LocalStorage (Simulating a Database)
             let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            allJobs = [...savedJobs, ...mockJobs];
+            allJobs = [...savedJobs, ...mockJobs]; // Combine user posted jobs with mock ones
             filteredJobs = allJobs;
             renderJobs();
         };
 
+        // --- NAVIGATION ---
         function toggleSidebar() {
             let sidebar = document.getElementById("mySidebar");
             sidebar.style.width = sidebar.style.width === "250px" ? "0" : "250px";
@@ -415,8 +416,7 @@
         function navigate(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            let sidebar = document.getElementById("mySidebar");
-            sidebar.style.width = "0"; 
+            toggleSidebar(); // Close menu after clicking
             
             if(pageId === 'home') {
                 document.getElementById('search-status').innerHTML = '';
@@ -426,6 +426,7 @@
             }
         }
 
+        // --- JOB RENDERING ---
         function renderJobs() {
             let html = '';
             let jobsToShow = filteredJobs.slice(0, displayedCount);
@@ -448,6 +449,7 @@
 
             document.getElementById('job-list').innerHTML = html;
 
+            // Handle Load More Button
             let loadBtn = document.getElementById('load-more-btn');
             if (filteredJobs.length > displayedCount) {
                 loadBtn.style.display = 'block';
@@ -461,10 +463,13 @@
             renderJobs();
         }
 
+        // --- SEARCH LOGIC ---
         function searchJobs() {
             let loc = document.getElementById('s-location').value.toLowerCase();
             let key = document.getElementById('s-keyword').value.toLowerCase();
             let cat = document.getElementById('s-category').value;
+            
+            // Get checked types
             let checkedTypes = Array.from(document.querySelectorAll('.s-type:checked')).map(cb => cb.value);
 
             filteredJobs = allJobs.filter(job => {
@@ -472,14 +477,18 @@
                 let matchKey = job.title.toLowerCase().includes(key) || job.desc.toLowerCase().includes(key);
                 let matchCat = cat === "" || job.category === cat;
                 let matchType = checkedTypes.length === 0 || checkedTypes.includes(job.type);
+
                 return matchLoc && matchKey && matchCat && matchType;
             });
 
             displayedCount = 8;
             renderJobs();
-            document.getElementById('search-status').innerHTML = `Found ${filteredJobs.length} matching job(s).`;
+
+            let statusBox = document.getElementById('search-status');
+            statusBox.innerHTML = `Search completed successfully. Found ${filteredJobs.length} matching job(s).`;
         }
 
+        // --- VIEW JOB DETAILS ---
         function viewJob(id) {
             let job = allJobs.find(j => j.id === id);
             if(!job) return;
@@ -495,14 +504,19 @@
                 <h3>Job Description</h3><br>
                 <p style="line-height:1.6;">${job.desc}</p>
             `;
+
             document.getElementById('details-content').innerHTML = detailsHtml;
+            
+            // Switch view without opening sidebar
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById('job-details').classList.add('active');
         }
 
+        // --- ADMIN SYSTEM ---
         function loginAdmin() {
             let email = document.getElementById('admin-email').value;
             let pass = document.getElementById('admin-pass').value;
+
             if (email === 'malkamedia10@gmail.com' && pass === '**********Mk2') {
                 document.getElementById('admin-login-section').style.display = 'none';
                 document.getElementById('admin-dashboard-section').style.display = 'block';
@@ -512,6 +526,8 @@
         }
 
         function logoutAdmin() {
+            document.getElementById('admin-email').value = '';
+            document.getElementById('admin-pass').value = '';
             document.getElementById('admin-login-section').style.display = 'block';
             document.getElementById('admin-dashboard-section').style.display = 'none';
         }
@@ -530,7 +546,7 @@
             }
 
             let newJob = {
-                id: Date.now(),
+                id: Date.now(), // Unique ID
                 title: title,
                 company: company,
                 location: location,
@@ -540,28 +556,25 @@
                 desc: desc
             };
 
+            // Get existing saved jobs from local storage, add new one, save back
             let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            savedJobs.unshift(newJob);
+            savedJobs.unshift(newJob); // Add to beginning
             localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
+
+            // Update live arrays
             allJobs.unshift(newJob);
+            
             alert("Job Posted Successfully!");
+            
+            // Clear form
+            document.getElementById('pj-title').value = '';
+            document.getElementById('pj-company').value = '';
+            document.getElementById('pj-location').value = '';
+            document.getElementById('pj-desc').value = '';
+
+            // Send back to home to see the job
             navigate('home');
         }
     </script>
-
-    <script type="text/javascript">
-        var sc_project=13208324; 
-        var sc_invisible=1; 
-        var sc_security="27f8c980"; 
-    </script>
-    <script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async></script>
-    <noscript>
-        <div class="statcounter">
-            <a title="Web Analytics" href="https://statcounter.com/" target="_blank">
-                <img class="statcounter" src="https://c.statcounter.com/13208324/0/27f8c980/1/" alt="Web Analytics" referrerPolicy="no-referrer-when-downgrade">
-            </a>
-        </div>
-    </noscript>
-
 </body>
 </html>
