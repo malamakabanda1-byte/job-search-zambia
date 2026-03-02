@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <head>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QZM6MV82"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QZM6MV82"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-S6QZM6MV82');
+    </script>
 
-  gtag('config', 'G-S6QZM6MV82');
-</script>
-    <meta name="description" content="Find the latest jobs in Zambia. Health, Finance, Education, and Agriculture jobs. Get professional CVs and Application letters for K20.">
-<meta name="keywords" content="Zambia Jobs, Lusaka Jobs, Zambian Careers, CV Writing Zambia, Hiring in Zambia">
-<meta name="author" content="Malka Media">
-        <meta name="google-site-verification" content="YOUR_SECRET_CODE_FROM_GOOGLE" />
+    <meta name="google-site-verification" content="YOUR_SECRET_CODE_FROM_GOOGLE" />
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Find the latest jobs in Zambia. Health, Finance, Education, and Agriculture jobs. Get professional CVs and Application letters for K20.">
+    <meta name="keywords" content="Zambia Jobs, Lusaka Jobs, Zambian Careers, CV Writing Zambia, Hiring in Zambia">
+    <meta name="author" content="Malka Media">
+    
     <title>Zambian Jobs</title>
+    
     <style>
         /* CSS STYLES */
         :root {
@@ -393,7 +395,6 @@
 
     <script>
         // --- DATA & STATE ---
-        // Some mock jobs so the app isn't empty when you first open it.
         const mockJobs = [
             { id: 1, title: "Registered Nurse", company: "Lusaka General Hospital", location: "Lusaka", category: "Health", type: "Full Time", date: "Posted 1 day ago", desc: "Looking for an experienced registered nurse for the night shift." },
             { id: 2, title: "Accountant", company: "Zambia National Bank", location: "Ndola", category: "Finance", type: "Full Time", date: "Posted 2 days ago", desc: "Managing daily accounts and financial reporting." },
@@ -413,9 +414,8 @@
 
         // --- INITIALIZATION ---
         window.onload = function() {
-            // Load custom jobs from LocalStorage (Simulating a Database)
             let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            allJobs = [...savedJobs, ...mockJobs]; // Combine user posted jobs with mock ones
+            allJobs = [...savedJobs, ...mockJobs]; 
             filteredJobs = allJobs;
             renderJobs();
         };
@@ -429,7 +429,7 @@
         function navigate(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            toggleSidebar(); // Close menu after clicking
+            toggleSidebar(); 
             
             if(pageId === 'home') {
                 document.getElementById('search-status').innerHTML = '';
@@ -462,7 +462,6 @@
 
             document.getElementById('job-list').innerHTML = html;
 
-            // Handle Load More Button
             let loadBtn = document.getElementById('load-more-btn');
             if (filteredJobs.length > displayedCount) {
                 loadBtn.style.display = 'block';
@@ -482,7 +481,6 @@
             let key = document.getElementById('s-keyword').value.toLowerCase();
             let cat = document.getElementById('s-category').value;
             
-            // Get checked types
             let checkedTypes = Array.from(document.querySelectorAll('.s-type:checked')).map(cb => cb.value);
 
             filteredJobs = allJobs.filter(job => {
@@ -520,7 +518,6 @@
 
             document.getElementById('details-content').innerHTML = detailsHtml;
             
-            // Switch view without opening sidebar
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById('job-details').classList.add('active');
         }
@@ -559,7 +556,7 @@
             }
 
             let newJob = {
-                id: Date.now(), // Unique ID
+                id: Date.now(), 
                 title: title,
                 company: company,
                 location: location,
@@ -569,28 +566,29 @@
                 desc: desc
             };
 
-            // Get existing saved jobs from local storage, add new one, save back
             let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            savedJobs.unshift(newJob); // Add to beginning
+            savedJobs.unshift(newJob); 
             localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
 
-            // Update live arrays
             allJobs.unshift(newJob);
             
             alert("Job Posted Successfully!");
             
-            // Clear form
             document.getElementById('pj-title').value = '';
             document.getElementById('pj-company').value = '';
             document.getElementById('pj-location').value = '';
             document.getElementById('pj-desc').value = '';
-             <script type="text/javascript">
-    var sc_project=XXXXXXX; 
-    var sc_invisible=1;
-            // Send back to home to see the job
+            
+            // Fixed: The bad script tag that was breaking your whole site has been removed from here!
             navigate('home');
         }
     </script>
+
+    <script type="text/javascript">
+        var sc_project=XXXXXXX; 
+        var sc_invisible=1;
+        // Ensure you add the rest of the Statcounter script below this if you have it!
+    </script>
+
 </body>
 </html>
-
