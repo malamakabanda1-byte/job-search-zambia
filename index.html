@@ -64,7 +64,7 @@
         }
         .header-left { display: flex; align-items: center; gap: 10px; }
         .menu-btn { font-size: 24px; cursor: pointer; background: none; border: none; color: var(--white); }
-        .logo { font-size: 20px; font-weight: bold; }
+        .logo { font-size: 20px; font-weight: bold; cursor: pointer; }
 
         /* Theme Toggle Button */
         .theme-btn {
@@ -133,6 +133,16 @@
         .job-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .job-main h3 { font-size: 18px; color: var(--primary); margin-bottom: 5px; }
         .job-main p { font-size: 14px; color: var(--text-light); }
+        
+        /* Share Button */
+        .share-btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 12px; color: var(--secondary); margin-top: 8px;
+            background: rgba(255, 140, 0, 0.1); padding: 4px 8px; border-radius: 4px;
+            transition: 0.2s;
+        }
+        .share-btn:hover { background: rgba(255, 140, 0, 0.2); color: #fff; }
+
         .job-meta { text-align: right; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
         .job-meta .location { font-weight: bold; color: var(--text-dark);}
         .job-meta .type { background: rgba(128,128,128,0.2); padding: 2px 5px; border-radius: 3px; display: inline-block; color: var(--text-dark);}
@@ -173,23 +183,77 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-light);}
 
+        /* Admin Delete Job Item */
+        .admin-job-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(128,128,128,0.1); padding: 10px; margin-bottom: 10px; 
+            border-radius: 4px; border: 1px solid var(--border-color);
+        }
+        .admin-job-info { font-size: 14px; color: var(--text-dark); }
+        .delete-btn { 
+            background: #d44638; color: white; border: none; 
+            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight:bold;
+        }
+        .delete-btn:hover { background: #b3382c; }
+
+        /* Terms Modal Overlay */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: var(--card-bg); padding: 30px; border-radius: 8px; max-width: 500px;
+            width: 90%; border: 1px solid var(--primary); text-align: left;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-box h3 { color: var(--primary); margin-bottom: 15px; text-align: center; font-size: 22px; }
+        .modal-box p { font-size: 14px; color: var(--text-dark); line-height: 1.6; margin-bottom: 15px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .btn.decline { background-color: transparent; border: 1px solid var(--text-light); color: var(--text-light); }
+        .btn.decline:hover { background-color: rgba(255,255,255,0.1); color: #fff; }
+
+        /* Toast Notification */
+        .toast {
+            visibility: hidden; min-width: 280px; background-color: var(--primary);
+            color: #fff; text-align: center; border-radius: 8px; padding: 16px;
+            position: fixed; z-index: 2000; left: 50%; bottom: 30px;
+            transform: translateX(-50%); font-size: 15px; font-weight: bold;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.5s, bottom 0.5s;
+        }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
         /* Footer */
         footer {
-            text-align: center;
-            padding: 20px;
-            margin-top: 20px;
-            font-size: 14px;
-            color: var(--text-light);
-            border-top: 1px solid var(--border-color);
+            text-align: center; padding: 20px; margin-top: 20px;
+            font-size: 14px; color: var(--text-light); border-top: 1px solid var(--border-color);
         }
     </style>
 </head>
 <body>
 
+    <div id="tnc-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Website Terms & Conditions</h3>
+            <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">
+                <p>Welcome to <strong>Zambian Jobs</strong>, operated by Malka Media. By accessing or using this platform, you agree to comply with and be bound by the following terms:</p>
+                <p><strong>1. Service Usage:</strong> This website is a free job board. We facilitate connections but do not guarantee employment.</p>
+                <p><strong>2. Accuracy of Information:</strong> While we strive to verify listings, we are not responsible for the accuracy of job descriptions or the legitimacy of third-party employers. Users must exercise their own due diligence.</p>
+                <p><strong>3. CV Services:</strong> Our K20 CV and Cover Letter writing service is a premium digital product. Payments are non-refundable once the final document is delivered.</p>
+                <p><strong>4. User Conduct:</strong> You agree not to use the platform for fraudulent applications, spam, or distribution of malicious software.</p>
+                <p><strong>5. Acceptance:</strong> By clicking "I Accept", you acknowledge that you have read and agreed to these terms.</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn decline" onclick="declineTNC()">Decline & Leave</button>
+                <button class="btn" onclick="acceptTNC()">I Accept</button>
+            </div>
+        </div>
+    </div>
+
     <header>
         <div class="header-left">
             <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-            <div class="logo">Zambian Jobs</div>
+            <div class="logo" onclick="navigate('home')">Zambian Jobs</div>
         </div>
         <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()">☀️ Light Mode</button>
     </header>
@@ -199,6 +263,8 @@
         <a href="#" onclick="navigate('home')">Home</a>
         <a href="#" onclick="navigate('about')">About Us</a>
         <a href="#" onclick="navigate('contact')">Contact Us</a>
+        <a href="#" onclick="navigate('privacy')">Privacy Policy</a>
+        <a href="#" onclick="navigate('terms')">Terms & Conditions</a>
         <a href="#" onclick="navigate('admin')">Admin Panel</a>
     </div>
 
@@ -233,7 +299,7 @@
         </div>
 
         <div id="job-details" class="page">
-            <button class="btn back-btn" onclick="navigate('home')">← Back to Jobs</button>
+            <button class="btn back-btn" onclick="goBackToJobs()">← Back to Jobs</button>
             <div id="details-content" class="content-box"></div>
             
             <div class="promo-box">
@@ -242,7 +308,6 @@
                 <div class="promo-links">
                     <a href="https://wa.me/260760900819?text=Hello,%20I%20have%20paid%20K20%20for%20a%20professional%20CV/Letter." target="_blank">WhatsApp Us</a>
                     <a href="mailto:malkamedia10@gmail.com" class="email-btn">Email Us</a>
-                    <a href="mailto:https://www.facebook.com/profile.php?id=61588171884233" class="facebook-btn">follow Us</a> 
                 </div>
             </div>
         </div>
@@ -263,14 +328,38 @@
                 <h4>Need a Professional CV & Letter? (K20 Only)</h4>
                 <p style="color:var(--text-dark);"><strong>WhatsApp / Call:</strong> +260760900819</p>
                 <p style="color:var(--text-dark);"><strong>Email:</strong> malkamedia10@gmail.com</p>
-                 <p style="color:var(--text-dark);"><strong>Facebook:</strong> https://www.facebook.com/profile.php?id=61588171884233</p>
             </div>
             <div class="content-box">
                 <h3 style="margin-bottom:15px;">Send us a message</h3>
                 <div class="form-group"><label>Your Name</label><input type="text" placeholder="Enter your name"></div>
                 <div class="form-group"><label>Email / Phone</label><input type="text" placeholder="Enter contact info"></div>
                 <div class="form-group"><label>Message</label><textarea rows="4" placeholder="Write your message here..."></textarea></div>
-                <button class="btn" onclick="alert('Message Sent Successfully!')">Send</button>
+                <button class="btn" onclick="showToast('Message Sent Successfully!')">Send</button>
+            </div>
+        </div>
+
+        <div id="privacy" class="page">
+            <h2 style="color:var(--primary); margin-bottom:15px;">Privacy Policy</h2>
+            <div class="content-box" style="line-height: 1.6; color:var(--text-dark);">
+                <p><strong>Effective Date:</strong> March 2026</p><br>
+                <p>Welcome to <strong>Zambian Jobs</strong>. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our job board platform and professional CV writing services.</p><br>
+                <h4 style="color:var(--primary); margin-top:10px;">1. Information We Collect</h4>
+                <p>We may collect personal information such as your name, email address, phone number, and professional details (like your resume data) when you contact us, request CV writing services via WhatsApp or Email, or interact with our platform.</p><br>
+                <h4 style="color:var(--primary); margin-top:10px;">2. How We Use Your Information</h4>
+                <p>We use the information we collect primarily to provide, operate, and maintain our platform. Your professional details are utilized strictly to craft and improve your customized CVs and Application Letters upon request.</p><br>
+                <h4 style="color:var(--primary); margin-top:10px;">3. Data Security</h4>
+                <p>We implement appropriate technical and organizational security measures to protect your data. We do not sell, trade, or rent your personal identification information to others.</p>
+            </div>
+        </div>
+
+        <div id="terms" class="page">
+            <h2 style="color:var(--primary); margin-bottom:15px;">Terms and Conditions</h2>
+            <div class="content-box" style="line-height: 1.6; color:var(--text-dark);">
+                <p><strong>1. Service Usage:</strong> This website is a free job board. We facilitate connections but do not guarantee employment.</p><br>
+                <p><strong>2. Accuracy of Information:</strong> While we strive to verify listings, we are not responsible for the accuracy of job descriptions or the legitimacy of third-party employers. Users must exercise their own due diligence.</p><br>
+                <p><strong>3. CV Services:</strong> Our K20 CV and Cover Letter writing service is a premium digital product. Payments are non-refundable once the final document is delivered.</p><br>
+                <p><strong>4. User Conduct:</strong> You agree not to use the platform for fraudulent applications, spam, or distribution of malicious software.</p><br>
+                <p><strong>5. Modifications:</strong> Malka Media reserves the right to modify these terms at any time without prior notice.</p>
             </div>
         </div>
 
@@ -295,6 +384,13 @@
                     <div class="form-group"><label>Description</label><textarea id="pj-desc" rows="4"></textarea></div>
                     <button class="btn" onclick="postJob()">Post Job to Site</button>
                     
+                    <button class="btn" style="background:#444; margin-top:15px;" onclick="toggleAdminJobs()">View / Manage Posted Jobs</button>
+                    
+                    <div id="admin-job-list-container" style="display:none; margin-top:15px; border-top:1px solid var(--border-color); padding-top:15px;">
+                        <h3 style="color:var(--secondary); margin-bottom:10px;">All Posted Jobs</h3>
+                        <div id="admin-jobs-wrapper"></div>
+                    </div>
+
                     <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
                     <h3 style="color:#ff8c00; margin-bottom:10px;">GitHub Persistence Tool</h3>
                     <p style="font-size:13px; color:var(--text-light); margin-bottom:10px;">To prevent losing jobs when updating GitHub, click Export, copy the code, and replace the 'mockJobs' array in your HTML file with it.</p>
@@ -307,13 +403,15 @@
         </div>
     </div>
 
+    <div id="toast" class="toast"></div>
+
     <footer>
         Built by Malka Media
     </footer>
 
     <script>
         // --- DATA & STATE ---
-        const mockJobs = [
+        let mockJobs = [
             { id: 1, title: "Registered Nurse", company: "Lusaka General Hospital", location: "Lusaka", category: "Health", type: "Full Time", date: "Posted 1 day ago", desc: "Looking for an experienced registered nurse for the night shift." },
             { id: 2, title: "Accountant", company: "Zambia National Bank", location: "Ndola", category: "Finance", type: "Full Time", date: "Posted 2 days ago", desc: "Managing daily accounts and financial reporting." },
             { id: 3, title: "High School Math Teacher", company: "Kabwe Trust School", location: "Kabwe", category: "Education", type: "Contract", date: "Posted 2 days ago", desc: "Teaching Grades 10-12 Mathematics." },
@@ -330,11 +428,16 @@
         let filteredJobs = [];
         let displayedCount = 8;
         
-        // Load likes & user toggle data
         let likesData = JSON.parse(localStorage.getItem('job_likes')) || {};
         let userLikedJobs = JSON.parse(localStorage.getItem('user_liked_jobs')) || {};
 
         window.onload = function() {
+            // Check Terms and Conditions
+            if (!localStorage.getItem('tnc_accepted')) {
+                document.getElementById('tnc-modal').style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Stop background scrolling
+            }
+
             // Apply saved theme
             let savedTheme = localStorage.getItem('theme');
             if(savedTheme === 'light') {
@@ -347,16 +450,71 @@
             // Load Jobs
             let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
             allJobs = [...savedJobs, ...mockJobs]; 
+            // Remove duplicates by ID
             allJobs = allJobs.filter((job, index, self) => index === self.findIndex((t) => (t.id === job.id)));
+            // Sort by ID descending (newest first)
+            allJobs.sort((a, b) => b.id - a.id);
             filteredJobs = allJobs;
-            renderJobs();
+            
+            // CHECK FOR SHARE URL (?job=123)
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedJobId = urlParams.get('job');
+            if (sharedJobId) {
+                let jobToOpen = allJobs.find(j => j.id == sharedJobId);
+                if (jobToOpen) {
+                    viewJob(jobToOpen.id, true); // True flag means we came from URL
+                } else {
+                    renderJobs(); // Job not found, just load home
+                }
+            } else {
+                renderJobs();
+            }
+            
+            checkNewJobsForNotification();
         };
 
-        // --- THEME TOGGLE ---
+        // --- TERMS AND CONDITIONS ---
+        function acceptTNC() {
+            localStorage.setItem('tnc_accepted', 'true');
+            document.getElementById('tnc-modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function declineTNC() {
+            document.body.innerHTML = `
+                <div style="display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; background:#111; color:#fff; padding:20px;">
+                    <div>
+                        <h2 style="color:#ff4d4d;">Access Denied</h2>
+                        <p style="margin-top:10px;">You must accept the Terms and Conditions to use Zambian Jobs.</p>
+                        <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:#00aa00; border:none; color:white; border-radius:4px; cursor:pointer;">Reload and Accept</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- NOTIFICATIONS ---
+        function showToast(message) {
+            let toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.className = "toast show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 4000);
+        }
+
+        function checkNewJobsForNotification() {
+            let lastNotifMsg = localStorage.getItem('latest_job_notif');
+            let seenNotifMsg = sessionStorage.getItem('seen_job_notif');
+            if(lastNotifMsg && lastNotifMsg !== seenNotifMsg) {
+                setTimeout(() => {
+                    showToast(lastNotifMsg);
+                    sessionStorage.setItem('seen_job_notif', lastNotifMsg);
+                }, 1500);
+            }
+        }
+
+        // --- THEME & NAVIGATION ---
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
             let isLight = document.body.classList.contains('light-mode');
-            
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
             document.getElementById('theme-toggle').innerText = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
         }
@@ -369,9 +527,13 @@
         function navigate(pageId) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            if(pageId !== 'job-details') toggleSidebar(); 
+            
+            let sidebar = document.getElementById("mySidebar");
+            if(sidebar.style.width === "250px") toggleSidebar(); 
             
             if(pageId === 'home') {
+                // Clear URL params if user clicks Home
+                window.history.replaceState({}, document.title, window.location.pathname);
                 document.getElementById('search-status').innerHTML = '';
                 filteredJobs = allJobs;
                 displayedCount = 8;
@@ -379,20 +541,28 @@
             }
         }
 
-        // --- RENDER JOBS & LIKES ---
+        // Handle Back button specifically for deep links
+        function goBackToJobs() {
+            // Remove the ?job= parameter from the address bar without reloading
+            window.history.replaceState({}, document.title, window.location.pathname);
+            navigate('home');
+        }
+
+        // --- RENDER JOBS & INTERACTIONS ---
         function renderJobs() {
             let html = '';
             let jobsToShow = filteredJobs.slice(0, displayedCount);
 
             jobsToShow.forEach(job => {
                 let loveCount = likesData[job.id] || 0;
-                let isLiked = userLikedJobs[job.id] ? '❤️' : '🤍'; // Check if this specific user liked it
+                let isLiked = userLikedJobs[job.id] ? '❤️' : '🤍'; 
 
                 html += `
                 <div class="job-card" onclick="viewJob(${job.id})">
                     <div class="job-main">
                         <h3>${job.title}</h3>
                         <p>${job.company}</p>
+                        <span class="share-btn" onclick="shareJob(event, ${job.id})">🔗 Share</span>
                     </div>
                     <div class="job-meta">
                         <span class="location">${job.location}</span>
@@ -413,24 +583,39 @@
             loadBtn.style.display = (filteredJobs.length > displayedCount) ? 'block' : 'none';
         }
 
-        function toggleLove(event, id) {
-            event.stopPropagation(); // Prevents opening the job details page
+        function shareJob(event, id) {
+            event.stopPropagation(); // Stop card click event
             
+            let job = allJobs.find(j => j.id === id);
+            // Construct the unique link for this specific job
+            let shareUrl = window.location.origin + window.location.pathname + "?job=" + id;
+            
+            // Use Web Share API if available (Mobile Native Sharing)
+            if (navigator.share) {
+                navigator.share({
+                    title: `Zambian Jobs: ${job.title}`,
+                    text: `Check out this ${job.title} job at ${job.company} in ${job.location}. Apply now!`,
+                    url: shareUrl
+                }).catch(console.error);
+            } else {
+                // Fallback: Copy to clipboard
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showToast("Link copied! Share it on WhatsApp.");
+                });
+            }
+        }
+
+        function toggleLove(event, id) {
+            event.stopPropagation(); 
             if(userLikedJobs[id]) {
-                // User already liked it -> UNLIKE IT
-                likesData[id] = Math.max(0, (likesData[id] || 1) - 1); // Prevent negative numbers
+                likesData[id] = Math.max(0, (likesData[id] || 1) - 1); 
                 userLikedJobs[id] = false;
             } else {
-                // User hasn't liked it -> LIKE IT
                 likesData[id] = (likesData[id] || 0) + 1;
                 userLikedJobs[id] = true;
             }
-            
-            // Save to local storage
             localStorage.setItem('job_likes', JSON.stringify(likesData));
             localStorage.setItem('user_liked_jobs', JSON.stringify(userLikedJobs));
-            
-            // Update UI instantly without reloading
             document.getElementById(`love-count-${id}`).innerText = likesData[id];
             document.getElementById(`love-btn-${id}`).innerText = userLikedJobs[id] ? '❤️' : '🤍';
         }
@@ -448,7 +633,7 @@
 
             filteredJobs = allJobs.filter(job => {
                 let matchLoc = job.location.toLowerCase().includes(loc);
-                let matchKey = job.title.toLowerCase().includes(key) || job.desc.toLowerCase().includes(key);
+                let matchKey = job.title.toLowerCase().includes(key) || job.desc.toLowerCase().includes(key) || job.company.toLowerCase().includes(key);
                 let matchCat = cat === "" || job.category === cat;
                 let matchType = checkedTypes.length === 0 || checkedTypes.includes(job.type);
                 return matchLoc && matchKey && matchCat && matchType;
@@ -459,31 +644,37 @@
             document.getElementById('search-status').innerHTML = `Found ${filteredJobs.length} matching job(s).`;
         }
 
-        function viewJob(id) {
+        function viewJob(id, fromUrl = false) {
             let job = allJobs.find(j => j.id === id);
             if(!job) return;
 
+            // Change URL so they can copy it directly from the address bar
+            if(!fromUrl) {
+                window.history.pushState({jobId: id}, job.title, "?job=" + id);
+            }
+
             let detailsHtml = `
                 <h2 style="color:var(--primary);">${job.title}</h2>
-                <h4 style="color:var(--text-light); margin-bottom:15px;">${job.company}</h4>
+                <h4 style="color:var(--text-light); margin-bottom:5px;">${job.company}</h4>
+                <button class="share-btn" style="margin-bottom:15px; border:none; cursor:pointer;" onclick="shareJob(event, ${job.id})">🔗 Share this Job</button>
                 <p><strong>Location:</strong> <span style="color:var(--text-dark)">${job.location}</span></p>
                 <p><strong>Type:</strong> <span style="color:var(--text-dark)">${job.type}</span></p>
                 <p><strong>Category:</strong> <span style="color:var(--text-dark)">${job.category}</span></p>
                 <p><strong>Date:</strong> <span style="color:var(--text-dark)">${job.date}</span></p>
                 <hr style="margin: 15px 0; border: 1px solid var(--border-color);">
                 <h3 style="color:var(--primary);">Job Description</h3><br>
-                <p style="line-height:1.6; color:var(--text-dark);">${job.desc}</p>
+                <p style="line-height:1.6; color:var(--text-dark); white-space: pre-wrap;">${job.desc}</p>
             `;
             document.getElementById('details-content').innerHTML = detailsHtml;
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById('job-details').classList.add('active');
         }
 
-        // --- ADMIN SYSTEM ---
+        // --- ADMIN SYSTEM COMPLETED ---
         function loginAdmin() {
             let email = document.getElementById('admin-email').value;
             let pass = document.getElementById('admin-pass').value;
-            if (email === 'malkamedia10@gmail.com' && pass === '**********Mk2') {
+            if (email === 'malkamedia10@gmail.com' && pass === '**********Mk2') { // Reminder to change this in production
                 document.getElementById('admin-login-section').style.display = 'none';
                 document.getElementById('admin-dashboard-section').style.display = 'block';
             } else {
@@ -497,6 +688,7 @@
             document.getElementById('admin-login-section').style.display = 'block';
             document.getElementById('admin-dashboard-section').style.display = 'none';
             document.getElementById('github-export-box').style.display = 'none';
+            document.getElementById('admin-job-list-container').style.display = 'none';
         }
 
         function postJob() {
@@ -508,35 +700,105 @@
             let desc = document.getElementById('pj-desc').value;
 
             if(!title || !company || !location || !desc) {
-                alert("Please fill all fields.");
+                alert('Please fill all fields!');
                 return;
             }
 
             let newJob = {
-                id: Date.now(), title, company, location, category, type, date: "Posted just now", desc
+                id: Date.now(), // Generate unique ID
+                title: title,
+                company: company,
+                location: location,
+                category: category,
+                type: type,
+                date: "Posted just now",
+                desc: desc
             };
 
+            // Save to LocalStorage
             let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            savedJobs.unshift(newJob); 
+            savedJobs.unshift(newJob); // Add to beginning
             localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
+            
+            // Set notification for users
+            localStorage.setItem('latest_job_notif', `New Job Alert: ${title} at ${company}!`);
+
+            // Update local array
             allJobs.unshift(newJob);
+            filteredJobs = allJobs;
+
+            showToast('Job Posted Successfully!');
             
-            alert("Job Posted Successfully!");
+            // Clear inputs
+            document.getElementById('pj-title').value = '';
+            document.getElementById('pj-company').value = '';
+            document.getElementById('pj-location').value = '';
+            document.getElementById('pj-desc').value = '';
+
+            // Refresh Admin List if open
+            if(document.getElementById('admin-job-list-container').style.display === 'block') {
+                renderAdminJobs();
+            }
+        }
+
+        function toggleAdminJobs() {
+            let container = document.getElementById('admin-job-list-container');
+            if(container.style.display === 'none') {
+                container.style.display = 'block';
+                renderAdminJobs();
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function renderAdminJobs() {
+            let html = '';
+            let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
             
-            // Clear fields
-            ['pj-title', 'pj-company', 'pj-location', 'pj-desc'].forEach(id => document.getElementById(id).value = '');
-            navigate('home');
+            if(savedJobs.length === 0) {
+                html = `<p style="color:var(--text-light); font-size:14px;">No custom jobs posted yet. Only default mock jobs remain.</p>`;
+            } else {
+                savedJobs.forEach(job => {
+                    html += `
+                    <div class="admin-job-item">
+                        <div class="admin-job-info">
+                            <strong>${job.title}</strong><br>
+                            ${job.company} - ${job.location}
+                        </div>
+                        <button class="delete-btn" onclick="deleteJob(${job.id})">Delete</button>
+                    </div>
+                    `;
+                });
+            }
+            document.getElementById('admin-jobs-wrapper').innerHTML = html;
+        }
+
+        function deleteJob(id) {
+            if(confirm('Are you sure you want to delete this job?')) {
+                let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
+                savedJobs = savedJobs.filter(j => j.id !== id);
+                localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
+                
+                // Refresh local state
+                allJobs = [...savedJobs, ...mockJobs];
+                allJobs = allJobs.filter((job, index, self) => index === self.findIndex((t) => (t.id === job.id)));
+                filteredJobs = allJobs;
+                
+                showToast('Job Deleted');
+                renderAdminJobs();
+            }
         }
 
         function exportDataForGithub() {
             let box = document.getElementById('github-export-box');
-            let exportString = "const mockJobs = \n" + JSON.stringify(allJobs, null, 2) + ";";
-            box.value = exportString;
+            // We export the ENTIRE allJobs array so you can hardcode it into the mockJobs variable
+            box.value = "let mockJobs = " + JSON.stringify(allJobs, null, 4) + ";";
             box.style.display = 'block';
             box.select();
             document.execCommand('copy');
-            alert("Jobs data copied to clipboard! Replace the 'mockJobs' array in your HTML file with this data before uploading to GitHub.");
+            showToast('Code copied! Replace the mockJobs array in your HTML file.');
         }
+
     </script>
 </body>
 </html>
