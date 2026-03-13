@@ -5,4 +5,25 @@
     <lastmod>2026-03-13</lastmod>
     <priority>1.0</priority>
   </url>
+
+  <url>
+    <loc>https://jobszambia.online/teaching-jobs</loc>
+    <lastmod>2026-03-13</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://jobszambia.online/health-nursing-jobs</loc>
+    <lastmod>2026-03-13</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://jobszambia.online/engineering-mining-jobs</loc>
+    <lastmod>2026-03-13</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://jobszambia.online/accounting-finance-jobs</loc>
+    <lastmod>2026-03-13</lastmod>
+    <priority>0.8</priority>
+  </url>
 </urlset>
