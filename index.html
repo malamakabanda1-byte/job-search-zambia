@@ -885,14 +885,39 @@
                 document.getElementById('theme-toggle').innerText = '☀️ Light Mode';
             }
 
-            // Load Jobs
-            let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            allJobs = [...savedJobs, ...mockJobs]; 
-            // Remove duplicates by ID
-            allJobs = allJobs.filter((job, index, self) => index === self.findIndex((t) => (t.id === job.id)));
-            // Sort by ID descending (newest first)
-            allJobs.sort((a, b) => b.id - a.id);
-            filteredJobs = allJobs;
+            // Load jobs from Firebase + keep existing jobs
+db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+    let firebaseJobs = [];
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+
+        firebaseJobs.push({
+            id: doc.id,
+            title: data.title || "",
+            company: data.company || "",
+            location: data.location || "",
+            category: data.category || "Others",
+            type: data.type || "Full Time",
+            date: "Posted recently",
+            desc: data.details || data.desc || "",
+            email: data.email || ""
+        });
+    });
+
+    // Combine Firebase jobs with existing website jobs
+    allJobs = [...firebaseJobs, ...mockJobs];
+
+    // Remove duplicates
+    allJobs = allJobs.filter((job, index, self) =>
+        index === self.findIndex(j => j.id === job.id)
+    );
+
+    filteredJobs = allJobs;
+    displayedCount = 8;
+
+    renderJobs();
+});
             
             // CHECK FOR SHARE URL (?job=123)
             const urlParams = new URLSearchParams(window.location.search);
