@@ -1124,7 +1124,7 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             let detailsHtml = `
                 <h2 style="color:var(--primary);">${job.title}</h2>
                 <h4 style="color:var(--text-light); margin-bottom:5px;">${job.company}</h4>
-                <button class="share-btn" style="margin-bottom:15px; border:none; cursor:pointer;" onclick="shareJob(event, ${job.id})">🔗 Share this Job</button>
+                <button class="share-btn" style="margin-bottom:15px; border:none; cursor:pointer;" onclick="shareJob(event, ${JSON.stringify(job.id)})">🔗 Share this Job</button>
                 <p><strong>Location:</strong> <span style="color:var(--text-dark)">${job.location}</span></p>
                 <p><strong>Type:</strong> <span style="color:var(--text-dark)">${job.type}</span></p>
                 <p><strong>Category:</strong> <span style="color:var(--text-dark)">${job.category}</span></p>
