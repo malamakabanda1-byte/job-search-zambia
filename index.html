@@ -1037,8 +1037,9 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             </div>
 
             <div class="job-meta">
-                <span class="date">${job.date}</span>
-            </div>
+    <span class="date">${job.date}</span>
+    <span class="location">📍 ${job.location}</span>
+</div>
 
             <div class="love-container">
                 <span id="love-count-${job.id}">${loveCount}</span>
