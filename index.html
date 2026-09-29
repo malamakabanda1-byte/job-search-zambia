@@ -1037,26 +1037,27 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             </div>
 
             <div class="job-meta">
-                <span class="location">${job.location}</span>
-                <span class="type">${job.type}</span>
                 <span class="date">${job.date}</span>
             </div>
 
             <div class="love-container">
-                <span class="love-count">${loveCount}</span>
+                <span id="love-count-${job.id}">${loveCount}</span>
 
-                <button class="love-btn" type="button">
+                <button
+                    class="love-btn"
+                    id="love-btn-${job.id}"
+                    type="button">
                     ${isLiked}
                 </button>
             </div>
         `;
 
-        // CLICK THE JOB CARD
+        // Open the full job when the card is clicked
         card.addEventListener('click', function() {
             viewJob(job.id);
         });
 
-        // SHARE BUTTON
+        // Share
         const shareButton = card.querySelector('.share-btn');
 
         shareButton.addEventListener('click', function(event) {
@@ -1064,7 +1065,7 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             shareJob(event, job.id);
         });
 
-        // LIKE BUTTON
+        // Like
         const loveButton = card.querySelector('.love-btn');
 
         loveButton.addEventListener('click', function(event) {
@@ -1077,11 +1078,8 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
 
     const loadBtn = document.getElementById('load-more-btn');
 
-    if (filteredJobs.length > displayedCount) {
-        loadBtn.style.display = 'block';
-    } else {
-        loadBtn.style.display = 'none';
-    }
+    loadBtn.style.display =
+        filteredJobs.length > displayedCount ? 'block' : 'none';
 }
 
         function shareJob(event, id) {
