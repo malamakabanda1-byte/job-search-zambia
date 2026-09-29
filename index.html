@@ -1013,43 +1013,76 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
 
         // --- RENDER JOBS & INTERACTIONS ---
         function renderJobs() {
-            let html = '';
-            let jobsToShow = filteredJobs.slice(0, displayedCount);
+    const jobList = document.getElementById('job-list');
+    jobList.innerHTML = '';
 
-            jobsToShow.forEach(job => {
-                let loveCount = likesData[job.id] || 0;
-                let isLiked = userLikedJobs[job.id] ? '❤️' : '🤍'; 
+    let jobsToShow = filteredJobs.slice(0, displayedCount);
 
-                html += `
-<div class="job-card" onclick="viewJob(${JSON.stringify(job.id)})">
-    <div class="job-main">
-        <h3>${job.title}</h3>
-        <p>${job.company}</p>
-        <span class="share-btn" onclick="shareJob(event, ${JSON.stringify(job.id)})">🔗 Share</span>
-    </div>
+    jobsToShow.forEach(job => {
 
-    <div class="job-meta">
-        <span class="location">${job.location}</span>
-        <span class="type">${job.type}</span>
-        <span class="date">${job.date}</span>
-    </div>
+        const card = document.createElement('div');
+        card.className = 'job-card';
 
-    <div class="love-container">
-        <span id="love-count-${job.id}">${loveCount}</span>
-        <button class="love-btn"
-            id="love-btn-${job.id}"
-            onclick="toggleLove(event, ${JSON.stringify(job.id)})">
-            ${isLiked}
-        </button>
-    </div>
-</div>
-`;
-            });
+        const loveCount = likesData[job.id] || 0;
+        const isLiked = userLikedJobs[job.id] ? '❤️' : '🤍';
 
-            document.getElementById('job-list').innerHTML = html;
-            let loadBtn = document.getElementById('load-more-btn');
-            loadBtn.style.display = (filteredJobs.length > displayedCount) ? 'block' : 'none';
-        }
+        card.innerHTML = `
+            <div class="job-main">
+                <h3>${job.title}</h3>
+                <p>${job.company}</p>
+
+                <button class="share-btn" type="button">
+                    🔗 Share
+                </button>
+            </div>
+
+            <div class="job-meta">
+                <span class="location">${job.location}</span>
+                <span class="type">${job.type}</span>
+                <span class="date">${job.date}</span>
+            </div>
+
+            <div class="love-container">
+                <span class="love-count">${loveCount}</span>
+
+                <button class="love-btn" type="button">
+                    ${isLiked}
+                </button>
+            </div>
+        `;
+
+        // CLICK THE JOB CARD
+        card.addEventListener('click', function() {
+            viewJob(job.id);
+        });
+
+        // SHARE BUTTON
+        const shareButton = card.querySelector('.share-btn');
+
+        shareButton.addEventListener('click', function(event) {
+            event.stopPropagation();
+            shareJob(event, job.id);
+        });
+
+        // LIKE BUTTON
+        const loveButton = card.querySelector('.love-btn');
+
+        loveButton.addEventListener('click', function(event) {
+            event.stopPropagation();
+            toggleLove(event, job.id);
+        });
+
+        jobList.appendChild(card);
+    });
+
+    const loadBtn = document.getElementById('load-more-btn');
+
+    if (filteredJobs.length > displayedCount) {
+        loadBtn.style.display = 'block';
+    } else {
+        loadBtn.style.display = 'none';
+    }
+}
 
         function shareJob(event, id) {
             event.stopPropagation(); // Stop card click event
