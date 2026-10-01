@@ -123,20 +123,22 @@
             padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px;
         }
         .btn:hover { background-color: #e07b00; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .back-btn { background: #444; color: #fff; margin-bottom: 15px; display: inline-block; width: auto;}
 
         /* Job Listings */
         .search-status { color: var(--primary); font-weight: bold; margin-bottom: 10px; }
         
         .job-card {
-            background: var(--card-bg); border-radius: 8px; padding: 15px 15px 40px 15px;
+            background: var(--card-bg); border-radius: 8px; padding: 15px 15px 45px 15px;
             margin-bottom: 15px; border: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; cursor: pointer;
+            display: flex; justify-content: space-between; gap: 10px; cursor: pointer;
             transition: 0.2s; position: relative; 
         }
         .job-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .job-main h3 { font-size: 18px; color: var(--primary); margin-bottom: 5px; }
-        .job-main p { font-size: 14px; color: var(--text-light); }
+        .job-main { flex: 1; min-width: 0; }
+        .job-main h3 { font-size: 18px; color: var(--primary); margin-bottom: 5px; overflow-wrap: anywhere; }
+        .job-main p { font-size: 14px; color: var(--text-light); overflow-wrap: anywhere; }
         
         /* Share Button */
         .share-btn {
@@ -147,8 +149,8 @@
         }
         .share-btn:hover { background: rgba(255, 140, 0, 0.2); color: #fff; }
 
-        .job-meta { text-align: right; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
-        .job-meta .location { font-weight: bold; color: var(--text-dark);}
+        .job-meta { text-align: right; font-size: 13px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 45%; flex-shrink: 0; }
+        .job-meta .location { font-weight: bold; color: var(--text-dark); overflow-wrap: anywhere; }
         .job-meta .type { background: rgba(128,128,128,0.2); padding: 2px 5px; border-radius: 3px; display: inline-block; color: var(--text-dark);}
         .job-meta .date { color: #777; }
 
@@ -172,6 +174,14 @@
 
         .load-more { background: #555; color: #fff; margin-top: 10px; }
 
+        /* Apply Button (job details) */
+        .apply-section { margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .apply-btn {
+            display: block; text-align: center; text-decoration: none;
+            background-color: var(--primary); color: #fff;
+        }
+        .apply-btn:hover { background-color: #008800; }
+
         /* Promo Box */
         .promo-box {
             background-color: rgba(0, 170, 0, 0.1); border: 2px dashed var(--primary); padding: 15px;
@@ -189,14 +199,16 @@
 
         /* Admin Delete Job Item */
         .admin-job-item {
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
             background: rgba(128,128,128,0.1); padding: 10px; margin-bottom: 10px; 
             border-radius: 4px; border: 1px solid var(--border-color);
         }
-        .admin-job-info { font-size: 14px; color: var(--text-dark); }
+        .admin-job-info { font-size: 14px; color: var(--text-dark); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+        .admin-job-info small { color: var(--text-light); }
+        .admin-jobs-scroll { max-height: 420px; overflow-y: auto; padding-right: 4px; }
         .delete-btn { 
             background: #d44638; color: white; border: none; 
-            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight:bold;
+            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight:bold; flex-shrink: 0;
         }
         .delete-btn:hover { background: #b3382c; }
 
@@ -386,7 +398,20 @@
                     <div class="form-group"><label>Category</label><select id="pj-category"><option>Health</option><option>Finance</option><option>Education</option><option>Agriculture</option><option>Others</option></select></div>
                     <div class="form-group"><label>Type</label><select id="pj-type"><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Temporary</option><option>Tender</option></select></div>
                     <div class="form-group"><label>Description</label><textarea id="pj-desc" rows="4"></textarea></div>
-                    <button class="btn" onclick="postJob()">Post Job to Site</button>
+                    <div class="form-group">
+                        <label>How Should Applicants Apply?</label>
+                        <select id="pj-apply-type" onchange="updateApplyPlaceholder()">
+                            <option value="link">Link (Website, Facebook, Social Media Post)</option>
+                            <option value="email">Email Address</option>
+                            <option value="whatsapp">WhatsApp Number</option>
+                            <option value="call">Phone Number (Call)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label id="pj-apply-label">Application Link</label>
+                        <input type="text" id="pj-apply-value" placeholder="https://...">
+                    </div>
+                    <button class="btn" id="post-job-btn" onclick="postJob()">Post Job to Site</button>
                     
                     <button class="btn" style="background:#444; margin-top:15px;" onclick="toggleAdminJobs()">View / Manage Posted Jobs</button>
                     
@@ -865,9 +890,21 @@
         let allJobs = [];
         let filteredJobs = [];
         let displayedCount = 8;
+
+        // Firebase-driven state
+        let firebaseJobs = [];          // jobs posted from the admin panel (Firestore)
+        let hiddenIds = new Set();      // built-in jobs the admin has deleted
+        let searchActive = false;
+        let adminJobsOpen = false;
+        let firstSnapshotDone = false;
+        let sharedJobId = null;
+        let sharedHandled = false;
+        const likeBusy = {};
         
         let likesData = JSON.parse(localStorage.getItem('job_likes')) || {};
         let userLikedJobs = JSON.parse(localStorage.getItem('user_liked_jobs')) || {};
+
+        const hasDb = (typeof db !== 'undefined');
 
         window.onload = function() {
             // Check Terms and Conditions
@@ -885,56 +922,144 @@
                 document.getElementById('theme-toggle').innerText = '☀️ Light Mode';
             }
 
-            // Load jobs from Firebase + keep existing jobs
-db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
-    let firebaseJobs = [];
-
-    snapshot.forEach(doc => {
-        const data = doc.data();
-
-        firebaseJobs.push({
-            id: doc.id,
-            title: data.title || "",
-            company: data.company || "",
-            location: data.location || "",
-            category: data.category || "Others",
-            type: data.type || "Full Time",
-            date: "Posted recently",
-            desc: data.details || data.desc || "",
-            email: data.email || ""
-        });
-    });
-
-    // Combine Firebase jobs with existing website jobs
-    allJobs = [...firebaseJobs, ...mockJobs];
-
-    // Remove duplicates
-    allJobs = allJobs.filter((job, index, self) =>
-        index === self.findIndex(j => j.id === job.id)
-    );
-
-    filteredJobs = allJobs;
-    displayedCount = 8;
-
-    renderJobs();
-});
-            
-            // CHECK FOR SHARE URL (?job=123)
+            // Shared link (?job=123)
             const urlParams = new URLSearchParams(window.location.search);
-            const sharedJobId = urlParams.get('job');
-            if (sharedJobId) {
-                let jobToOpen = allJobs.find(j => j.id == sharedJobId);
-                if (jobToOpen) {
-                    viewJob(jobToOpen.id, true); // True flag means we came from URL
-                } else {
-                    renderJobs(); // Job not found, just load home
-                }
+            sharedJobId = urlParams.get('job');
+
+            // Show the built-in jobs straight away, Firebase updates them live
+            rebuildJobs();
+
+            if (hasDb) {
+                // 1) Jobs posted by the admin appear automatically (real-time)
+                db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                    firebaseJobs = snapshot.docs.map(mapFirebaseJob);
+                    firstSnapshotDone = true;
+                    rebuildJobs();
+                }, error => {
+                    console.error("Jobs listener error:", error);
+                    firstSnapshotDone = true;
+                    tryOpenSharedJob();
+                });
+
+                // 2) Built-in jobs that the admin deleted stay hidden for everyone
+                db.collection("hiddenJobs").onSnapshot(snapshot => {
+                    hiddenIds = new Set(snapshot.docs.map(doc => doc.id));
+                    rebuildJobs();
+                }, error => console.error("Hidden jobs listener error:", error));
+
+                // 3) Shared like counts
+                db.collection("jobLikes").onSnapshot(snapshot => {
+                    snapshot.forEach(doc => {
+                        likesData[doc.id] = Math.max(0, Number(doc.data().count) || 0);
+                    });
+                    localStorage.setItem('job_likes', JSON.stringify(likesData));
+                    refreshLikeUI();
+                }, error => console.error("Likes listener error:", error));
             } else {
-                renderJobs();
+                firstSnapshotDone = true;
             }
             
             checkNewJobsForNotification();
         };
+
+        // --- HELPERS ---
+        // Changing the address bar can be blocked in some browsers/previews. Never let that stop the page.
+        function safeHistory(method, title, url) {
+            try {
+                window.history[method]({}, title, url);
+            } catch (e) {
+                console.warn('History update skipped:', e);
+            }
+        }
+
+        function esc(value) {
+            return String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, function(ch) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+            });
+        }
+
+        // Keeps the card tidy: short location only (cuts anything after "---" or a new line)
+        function cleanLocation(loc, max) {
+            let text = String(loc || '').split(/---|\n/)[0].trim();
+            if (max && text.length > max) text = text.slice(0, max).trim() + '…';
+            return text || 'Zambia';
+        }
+
+        function formatPosted(ms) {
+            const minutes = Math.floor((Date.now() - ms) / 60000);
+            if (minutes < 1) return 'Posted just now';
+            if (minutes < 60) return 'Posted ' + minutes + ' min ago';
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return 'Posted ' + hours + (hours === 1 ? ' hr ago' : ' hrs ago');
+            const days = Math.floor(hours / 24);
+            if (days < 7) return 'Posted ' + days + (days === 1 ? ' day ago' : ' days ago');
+            return 'Posted ' + new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function postedLabel(job) {
+            if (job.createdMs) return formatPosted(job.createdMs);
+            return 'Posted recently';
+        }
+
+        function mapFirebaseJob(doc) {
+            const data = doc.data();
+            let createdMs = Date.now(); // a brand-new job is still waiting for its server time
+            const c = data.createdAt;
+            if (c && typeof c.toMillis === 'function') createdMs = c.toMillis();
+            else if (c && typeof c.seconds === 'number') createdMs = c.seconds * 1000;
+            else if (typeof c === 'number') createdMs = c;
+
+            return {
+                id: doc.id,
+                title: data.title || "",
+                company: data.company || "",
+                location: data.location || "",
+                category: data.category || "Others",
+                type: data.type || "Full Time",
+                date: "",
+                createdMs: createdMs,
+                desc: data.details || data.desc || "",
+                email: data.email || "",
+                applyType: data.applyType || "",
+                applyValue: data.applyValue || ""
+            };
+        }
+
+        // Built-in jobs carry their posting time inside their id
+        function prepareMockJob(job) {
+            const ms = (typeof job.id === 'number' && job.id > 1e12) ? job.id : null;
+            return Object.assign({}, job, { createdMs: ms });
+        }
+
+        function rebuildJobs() {
+            const seen = new Set();
+            const combined = [...firebaseJobs, ...mockJobs.map(prepareMockJob)].filter(job => {
+                const key = String(job.id);
+                if (hiddenIds.has(key) || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+
+            combined.sort((a, b) => (b.createdMs || 0) - (a.createdMs || 0));
+            allJobs = combined;
+
+            filteredJobs = searchActive ? applyFilters() : allJobs;
+            renderJobs();
+            if (searchActive) updateSearchStatus();
+            if (adminJobsOpen) renderAdminJobs();
+            tryOpenSharedJob();
+        }
+
+        function tryOpenSharedJob() {
+            if (!sharedJobId || sharedHandled) return;
+            const job = allJobs.find(j => String(j.id) === String(sharedJobId));
+            if (job) {
+                sharedHandled = true;
+                viewJob(job.id, true); // true = we came from the URL
+            } else if (firstSnapshotDone) {
+                sharedHandled = true;
+            }
+        }
 
         // --- TERMS AND CONDITIONS ---
         function acceptTNC() {
@@ -996,8 +1121,9 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             
             if(pageId === 'home') {
                 // Clear URL params if user clicks Home
-                window.history.replaceState({}, document.title, window.location.pathname);
+                safeHistory('replaceState', document.title, window.location.pathname);
                 document.getElementById('search-status').innerHTML = '';
+                searchActive = false;
                 filteredJobs = allJobs;
                 displayedCount = 8;
                 renderJobs();
@@ -1007,97 +1133,87 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
         // Handle Back button specifically for deep links
         function goBackToJobs() {
             // Remove the ?job= parameter from the address bar without reloading
-            window.history.replaceState({}, document.title, window.location.pathname);
+            safeHistory('replaceState', document.title, window.location.pathname);
             navigate('home');
         }
 
         // --- RENDER JOBS & INTERACTIONS ---
+        // Card = Title + Company + Share (left) | Location + Date posted (right) + Like (bottom right)
         function renderJobs() {
-    const jobList = document.getElementById('job-list');
-    jobList.innerHTML = '';
+            const jobList = document.getElementById('job-list');
+            jobList.innerHTML = '';
 
-    let jobsToShow = filteredJobs.slice(0, displayedCount);
+            if (filteredJobs.length === 0) {
+                jobList.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:20px;">No jobs found.</p>';
+            }
 
-    jobsToShow.forEach(job => {
+            const jobsToShow = filteredJobs.slice(0, displayedCount);
 
-        const card = document.createElement('div');
-        card.className = 'job-card';
+            jobsToShow.forEach(job => {
+                const jobId = String(job.id);
+                const card = document.createElement('div');
+                card.className = 'job-card';
 
-        const loveCount = likesData[job.id] || 0;
-        const isLiked = userLikedJobs[job.id] ? '❤️' : '🤍';
+                const loveCount = likesData[jobId] || 0;
+                const heart = userLikedJobs[jobId] ? '❤️' : '🤍';
 
-        card.innerHTML = `
-            <div class="job-main">
-                <h3>${job.title}</h3>
-                <p>${job.company}</p>
+                card.innerHTML = `
+                    <div class="job-main">
+                        <h3>${esc(job.title)}</h3>
+                        <p>${esc(job.company)}</p>
+                        <button class="share-btn" type="button">🔗 Share</button>
+                    </div>
 
-                <button class="share-btn" type="button">
-                    🔗 Share
-                </button>
-            </div>
+                    <div class="job-meta">
+                        <span class="location">📍 ${esc(cleanLocation(job.location, 40))}</span>
+                        <span class="date">${esc(postedLabel(job))}</span>
+                    </div>
 
-            <div class="job-meta">
-    <span class="date">${job.date}</span>
-    <span class="location">📍 ${job.location}</span>
-</div>
+                    <div class="love-container">
+                        <span class="love-count" data-id="${esc(jobId)}">${loveCount}</span>
+                        <button class="love-btn" data-id="${esc(jobId)}" type="button">${heart}</button>
+                    </div>
+                `;
 
-            <div class="love-container">
-                <span id="love-count-${job.id}">${loveCount}</span>
+                // Open the full job details only when the card is clicked
+                card.addEventListener('click', function() {
+                    viewJob(job.id);
+                });
 
-                <button
-                    class="love-btn"
-                    id="love-btn-${job.id}"
-                    type="button">
-                    ${isLiked}
-                </button>
-            </div>
-        `;
+                card.querySelector('.share-btn').addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    shareJob(event, job.id);
+                });
 
-        // Open the full job when the card is clicked
-        card.addEventListener('click', function() {
-            viewJob(job.id);
-        });
+                card.querySelector('.love-btn').addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    toggleLove(event, job.id);
+                });
 
-        // Share
-        const shareButton = card.querySelector('.share-btn');
+                jobList.appendChild(card);
+            });
 
-        shareButton.addEventListener('click', function(event) {
-            event.stopPropagation();
-            shareJob(event, job.id);
-        });
-
-        // Like
-        const loveButton = card.querySelector('.love-btn');
-
-        loveButton.addEventListener('click', function(event) {
-            event.stopPropagation();
-            toggleLove(event, job.id);
-        });
-
-        jobList.appendChild(card);
-    });
-
-    const loadBtn = document.getElementById('load-more-btn');
-
-    loadBtn.style.display =
-        filteredJobs.length > displayedCount ? 'block' : 'none';
-}
+            document.getElementById('load-more-btn').style.display =
+                filteredJobs.length > displayedCount ? 'block' : 'none';
+        }
 
         function shareJob(event, id) {
             event.stopPropagation(); // Stop card click event
             
-            let job = allJobs.find(j => j.id === id);
+            let job = allJobs.find(j => String(j.id) === String(id));
+            if (!job) return;
+
             // Construct the unique link for this specific job
-            let shareUrl = window.location.origin + window.location.pathname + "?job=" + id;
+            let shareUrl = window.location.origin + window.location.pathname + "?job=" + encodeURIComponent(id);
             
             // Use Web Share API if available (Mobile Native Sharing)
             if (navigator.share) {
                 navigator.share({
                     title: `Zambian Jobs: ${job.title}`,
-                    text: `Check out this ${job.title} job at ${job.company} in ${job.location}. Apply now!`,
+                    text: `Check out this ${job.title} job at ${job.company} in ${cleanLocation(job.location, 60)}. Apply now!`,
                     url: shareUrl
                 }).catch(console.error);
-            } else {
+            } else if (navigator.clipboard) {
                 // Fallback: Copy to clipboard
                 navigator.clipboard.writeText(shareUrl).then(() => {
                     showToast("Link copied! Share it on WhatsApp.");
@@ -1105,19 +1221,38 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             }
         }
 
+        // One like per person (remembered on the device). Tap again to remove it.
         function toggleLove(event, id) {
             event.stopPropagation(); 
-            if(userLikedJobs[id]) {
-                likesData[id] = Math.max(0, (likesData[id] || 1) - 1); 
-                userLikedJobs[id] = false;
-            } else {
-                likesData[id] = (likesData[id] || 0) + 1;
-                userLikedJobs[id] = true;
-            }
+            id = String(id);
+            if (likeBusy[id]) return;
+
+            const wasLiked = !!userLikedJobs[id];
+            const delta = wasLiked ? -1 : 1;
+
+            userLikedJobs[id] = !wasLiked;
+            likesData[id] = Math.max(0, (likesData[id] || 0) + delta);
             localStorage.setItem('job_likes', JSON.stringify(likesData));
             localStorage.setItem('user_liked_jobs', JSON.stringify(userLikedJobs));
-            document.getElementById(`love-count-${id}`).innerText = likesData[id];
-            document.getElementById(`love-btn-${id}`).innerText = userLikedJobs[id] ? '❤️' : '🤍';
+            refreshLikeUI();
+
+            // Save the like so everyone sees the same number
+            if (hasDb) {
+                likeBusy[id] = true;
+                db.collection('jobLikes').doc(id)
+                    .set({ count: firebase.firestore.FieldValue.increment(delta) }, { merge: true })
+                    .then(() => { likeBusy[id] = false; })
+                    .catch(err => { likeBusy[id] = false; console.error('Like could not be saved:', err); });
+            }
+        }
+
+        function refreshLikeUI() {
+            document.querySelectorAll('.love-count').forEach(el => {
+                el.textContent = likesData[el.dataset.id] || 0;
+            });
+            document.querySelectorAll('.love-btn').forEach(el => {
+                el.textContent = userLikedJobs[el.dataset.id] ? '❤️' : '🤍';
+            });
         }
 
         function loadMore() {
@@ -1125,55 +1260,155 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             renderJobs();
         }
 
-        function searchJobs() {
+        function applyFilters() {
             let loc = document.getElementById('s-location').value.toLowerCase();
             let key = document.getElementById('s-keyword').value.toLowerCase();
             let cat = document.getElementById('s-category').value;
             let checkedTypes = Array.from(document.querySelectorAll('.s-type:checked')).map(cb => cb.value);
 
-            filteredJobs = allJobs.filter(job => {
-                let matchLoc = job.location.toLowerCase().includes(loc);
-                let matchKey = job.title.toLowerCase().includes(key) || job.desc.toLowerCase().includes(key) || job.company.toLowerCase().includes(key);
+            return allJobs.filter(job => {
+                let matchLoc = String(job.location).toLowerCase().includes(loc);
+                let matchKey = String(job.title).toLowerCase().includes(key) || String(job.desc).toLowerCase().includes(key) || String(job.company).toLowerCase().includes(key);
                 let matchCat = cat === "" || job.category === cat;
                 let matchType = checkedTypes.length === 0 || checkedTypes.includes(job.type);
                 return matchLoc && matchKey && matchCat && matchType;
             });
+        }
 
-            displayedCount = 8;
-            renderJobs();
+        function updateSearchStatus() {
             document.getElementById('search-status').innerHTML = `Found ${filteredJobs.length} matching job(s).`;
         }
 
+        function searchJobs() {
+            searchActive = true;
+            filteredJobs = applyFilters();
+            displayedCount = 8;
+            renderJobs();
+            updateSearchStatus();
+        }
+
+        // --- APPLY LINK ---
+        function normalizePhone(value) {
+            let digits = String(value || '').replace(/\D/g, '');
+            if (digits.startsWith('260')) return digits;
+            if (digits.startsWith('0')) return '260' + digits.slice(1);
+            if (digits.length === 9) return '260' + digits;
+            return digits.length >= 9 ? digits : '';
+        }
+
+        // For older jobs that have no apply info saved: find an email, link or number in the description
+        function detectApply(desc) {
+            const text = String(desc || '');
+
+            const email = text.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+            if (email) return { type: 'email', value: email[0] };
+
+            const urls = text.match(/https?:\/\/[^\s]+/g) || [];
+            for (let i = 0; i < urls.length; i++) {
+                const url = urls[i].replace(/[).,;]+$/, '');
+                if (url.indexOf('/.../') !== -1) continue; // broken / shortened link
+                return { type: 'link', value: url };
+            }
+
+            const phone = text.match(/(?<!\d)(?:\+?260[\s-]?|0)?(?:9[5-7]|7[5-7])\d{7}(?!\d)/);
+            if (phone) {
+                return { type: /whatsapp/i.test(text) ? 'whatsapp' : 'call', value: phone[0] };
+            }
+            return null;
+        }
+
+        function getApply(job) {
+            if (job.applyType && job.applyValue) return { type: job.applyType, value: job.applyValue };
+            if (job.email) return { type: 'email', value: job.email };
+            return detectApply(job.desc);
+        }
+
+        function buildApplyHref(apply, job) {
+            const value = String(apply.value).trim();
+            if (!value) return '';
+            switch (apply.type) {
+                case 'email':
+                    return 'mailto:' + value + '?subject=' + encodeURIComponent('Application for ' + job.title);
+                case 'whatsapp': {
+                    const num = normalizePhone(value);
+                    return num ? 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hello, I would like to apply for the ' + job.title + ' position at ' + job.company + ' (seen on jobszambia.online).') : '';
+                }
+                case 'call': {
+                    const num = normalizePhone(value);
+                    return num ? 'tel:+' + num : '';
+                }
+                default:
+                    return /^https?:\/\//i.test(value) ? value : 'https://' + value;
+            }
+        }
+
+        function buildApplyHtml(job) {
+            const apply = getApply(job);
+            if (!apply) return '';
+            const href = buildApplyHref(apply, job);
+            if (!href) return '';
+
+            const labels = {
+                link:     '🌐 Apply Online',
+                email:    '📩 Apply via Email',
+                whatsapp: '💬 Apply via WhatsApp',
+                call:     '📞 Call to Apply'
+            };
+            const label = labels[apply.type] || labels.link;
+            const opensNewTab = (apply.type === 'link' || apply.type === 'whatsapp');
+
+            return `
+                <div class="apply-section">
+                    <a class="btn apply-btn" href="${esc(href)}" ${opensNewTab ? 'target="_blank" rel="noopener noreferrer"' : ''}>${label}</a>
+                </div>
+            `;
+        }
+
+        // --- JOB DETAILS ---
         function viewJob(id, fromUrl = false) {
             let job = allJobs.find(j => String(j.id) === String(id));
             if(!job) return;
 
             // Change URL so they can copy it directly from the address bar
             if(!fromUrl) {
-                window.history.pushState({jobId: id}, job.title, "?job=" + id);
+                safeHistory('pushState', job.title, "?job=" + encodeURIComponent(id));
+            }
+
+            let applyHtml = '';
+            try {
+                applyHtml = buildApplyHtml(job);
+            } catch (e) {
+                console.warn('Apply button skipped:', e);
             }
 
             let detailsHtml = `
-                <h2 style="color:var(--primary);">${job.title}</h2>
-                <h4 style="color:var(--text-light); margin-bottom:5px;">${job.company}</h4>
-                <button class="share-btn" style="margin-bottom:15px; border:none; cursor:pointer;" onclick="shareJob(event, ${JSON.stringify(job.id)})">🔗 Share this Job</button>
-                <p><strong>Location:</strong> <span style="color:var(--text-dark)">${job.location}</span></p>
-                <p><strong>Type:</strong> <span style="color:var(--text-dark)">${job.type}</span></p>
-                <p><strong>Category:</strong> <span style="color:var(--text-dark)">${job.category}</span></p>
-                <p><strong>Date:</strong> <span style="color:var(--text-dark)">${job.date}</span></p>
+                <h2 style="color:var(--primary); overflow-wrap:anywhere;">${esc(job.title)}</h2>
+                <h4 style="color:var(--text-light); margin-bottom:5px;">${esc(job.company)}</h4>
+                <button class="share-btn" id="details-share-btn" type="button" style="margin-bottom:15px; border:none; cursor:pointer;">🔗 Share this Job</button>
+                <p><strong>Location:</strong> <span style="color:var(--text-dark)">${esc(cleanLocation(job.location, 0))}</span></p>
+                <p><strong>Type:</strong> <span style="color:var(--text-dark)">${esc(job.type)}</span></p>
+                <p><strong>Category:</strong> <span style="color:var(--text-dark)">${esc(job.category)}</span></p>
+                <p><strong>Date:</strong> <span style="color:var(--text-dark)">${esc(postedLabel(job))}</span></p>
                 <hr style="margin: 15px 0; border: 1px solid var(--border-color);">
                 <h3 style="color:var(--primary);">Job Description</h3><br>
-                <p style="line-height:1.6; color:var(--text-dark); white-space: pre-wrap;">${job.desc}</p>
+                <p style="line-height:1.6; color:var(--text-dark); white-space: pre-wrap; overflow-wrap:anywhere;">${esc(job.desc)}</p>
+                ${applyHtml}
             `;
             document.getElementById('details-content').innerHTML = detailsHtml;
+            document.getElementById('details-share-btn').addEventListener('click', function(event) {
+                shareJob(event, job.id);
+            });
+
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById('job-details').classList.add('active');
+            window.scrollTo(0, 0);
         }
 
-        // --- ADMIN SYSTEM COMPLETED ---
+        // --- ADMIN SYSTEM ---
         function loginAdmin() {
             let email = document.getElementById('admin-email').value;
             let pass = document.getElementById('admin-pass').value;
+            // ⚠️ Keep YOUR real admin password on the next line (it was hidden in the code you sent me)
             if (email === 'malkamedia10@gmail.com' && pass === '**********Mk2') { // Reminder to change this in production
                 document.getElementById('admin-login-section').style.display = 'none';
                 document.getElementById('admin-dashboard-section').style.display = 'block';
@@ -1189,55 +1424,94 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             document.getElementById('admin-dashboard-section').style.display = 'none';
             document.getElementById('github-export-box').style.display = 'none';
             document.getElementById('admin-job-list-container').style.display = 'none';
+            adminJobsOpen = false;
         }
 
-        function postJob() {
-            let title = document.getElementById('pj-title').value;
-            let company = document.getElementById('pj-company').value;
-            let location = document.getElementById('pj-location').value;
+        function updateApplyPlaceholder() {
+            const type = document.getElementById('pj-apply-type').value;
+            const label = document.getElementById('pj-apply-label');
+            const input = document.getElementById('pj-apply-value');
+            if (type === 'email') {
+                label.innerText = 'Application Email';
+                input.placeholder = 'careers@company.com';
+            } else if (type === 'whatsapp') {
+                label.innerText = 'WhatsApp Number';
+                input.placeholder = 'e.g. 0971234567 or +260971234567';
+            } else if (type === 'call') {
+                label.innerText = 'Phone Number';
+                input.placeholder = 'e.g. 0971234567 or +260971234567';
+            } else {
+                label.innerText = 'Application Link';
+                input.placeholder = 'https://... (website, Facebook post, etc.)';
+            }
+        }
+
+        async function postJob() {
+            let title = document.getElementById('pj-title').value.trim();
+            let company = document.getElementById('pj-company').value.trim();
+            let location = document.getElementById('pj-location').value.trim();
             let category = document.getElementById('pj-category').value;
             let type = document.getElementById('pj-type').value;
-            let desc = document.getElementById('pj-desc').value;
+            let desc = document.getElementById('pj-desc').value.trim();
+            let applyType = document.getElementById('pj-apply-type').value;
+            let applyValue = document.getElementById('pj-apply-value').value.trim();
 
-            if(!title || !company || !location || !desc) {
-                alert('Please fill all fields!');
+            if(!title || !company || !location || !desc || !applyValue) {
+                alert('Please fill all fields, including the application link / email / number!');
                 return;
             }
 
-            let newJob = {
-                id: Date.now(), // Generate unique ID
-                title: title,
-                company: company,
-                location: location,
-                category: category,
-                type: type,
-                date: "Posted just now",
-                desc: desc
-            };
+            // Check the apply method
+            if (applyType === 'email') {
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(applyValue)) { alert('Please enter a valid email address.'); return; }
+            } else if (applyType === 'whatsapp' || applyType === 'call') {
+                if (!normalizePhone(applyValue)) { alert('Please enter a valid phone number.'); return; }
+            } else {
+                if (!/^https?:\/\//i.test(applyValue)) applyValue = 'https://' + applyValue;
+                try { new URL(applyValue); } catch (e) { alert('Please enter a valid link.'); return; }
+            }
 
-            // Save to LocalStorage
-            let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            savedJobs.unshift(newJob); // Add to beginning
-            localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
-            
-            // Set notification for users
-            localStorage.setItem('latest_job_notif', `New Job Alert: ${title} at ${company}!`);
+            if (!hasDb) {
+                alert('Firebase is not connected. Check that firebase.js is uploaded next to this page.');
+                return;
+            }
 
-            // Update local array
-            allJobs.unshift(newJob);
-            filteredJobs = allJobs;
+            const postBtn = document.getElementById('post-job-btn');
+            postBtn.disabled = true;
+            postBtn.innerText = 'Posting...';
 
-            showToast('Job Posted Successfully!');
-            
-            // Clear inputs
-            document.getElementById('pj-title').value = '';
-            document.getElementById('pj-company').value = '';
-            document.getElementById('pj-location').value = '';
-            document.getElementById('pj-desc').value = '';
+            try {
+                // Saved straight to Firebase, so it shows on the website automatically
+                await db.collection('jobs').add({
+                    title: title,
+                    company: company,
+                    location: location,
+                    category: category,
+                    type: type,
+                    desc: desc,
+                    details: desc,
+                    applyType: applyType,
+                    applyValue: applyValue,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-            // Refresh Admin List if open
-            if(document.getElementById('admin-job-list-container').style.display === 'block') {
-                renderAdminJobs();
+                // Set notification for users
+                localStorage.setItem('latest_job_notif', `New Job Alert: ${title} at ${company}!`);
+
+                showToast('Job Posted Successfully!');
+
+                // Clear inputs
+                document.getElementById('pj-title').value = '';
+                document.getElementById('pj-company').value = '';
+                document.getElementById('pj-location').value = '';
+                document.getElementById('pj-desc').value = '';
+                document.getElementById('pj-apply-value').value = '';
+            } catch (error) {
+                console.error('Post job error:', error);
+                alert('Could not post the job. Check your internet connection and your Firebase rules.');
+            } finally {
+                postBtn.disabled = false;
+                postBtn.innerText = 'Post Job to Site';
             }
         }
 
@@ -1245,47 +1519,74 @@ db.collection("jobs").orderBy("createdAt", "desc").onSnapshot(snapshot => {
             let container = document.getElementById('admin-job-list-container');
             if(container.style.display === 'none') {
                 container.style.display = 'block';
+                adminJobsOpen = true;
                 renderAdminJobs();
             } else {
                 container.style.display = 'none';
+                adminJobsOpen = false;
             }
         }
 
+        // Shows every job that is live on the website, each with a Delete button
         function renderAdminJobs() {
-            let html = '';
-            let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-            
-            if(savedJobs.length === 0) {
-                html = `<p style="color:var(--text-light); font-size:14px;">No custom jobs posted yet. Only default mock jobs remain.</p>`;
-            } else {
-                savedJobs.forEach(job => {
-                    html += `
-                    <div class="admin-job-item">
-                        <div class="admin-job-info">
-                            <strong>${job.title}</strong><br>
-                            ${job.company} - ${job.location}
-                        </div>
-                        <button class="delete-btn" onclick="deleteJob(${job.id})">Delete</button>
-                    </div>
-                    `;
-                });
+            const wrapper = document.getElementById('admin-jobs-wrapper');
+            wrapper.innerHTML = '';
+
+            if (allJobs.length === 0) {
+                wrapper.innerHTML = '<p style="color:var(--text-light); font-size:14px;">No jobs on the website yet.</p>';
+                return;
             }
-            document.getElementById('admin-jobs-wrapper').innerHTML = html;
+
+            const count = document.createElement('p');
+            count.style.cssText = 'color:var(--text-light); font-size:13px; margin-bottom:10px;';
+            count.textContent = allJobs.length + ' job(s) live on the website';
+            wrapper.appendChild(count);
+
+            const scroll = document.createElement('div');
+            scroll.className = 'admin-jobs-scroll';
+
+            allJobs.forEach(job => {
+                const row = document.createElement('div');
+                row.className = 'admin-job-item';
+                row.innerHTML = `
+                    <div class="admin-job-info">
+                        <strong>${esc(job.title)}</strong><br>
+                        ${esc(job.company)} - ${esc(cleanLocation(job.location, 40))}<br>
+                        <small>${esc(postedLabel(job))}</small>
+                    </div>
+                    <button class="delete-btn" type="button">Delete</button>
+                `;
+                row.querySelector('.delete-btn').addEventListener('click', function() {
+                    deleteJob(job.id);
+                });
+                scroll.appendChild(row);
+            });
+
+            wrapper.appendChild(scroll);
         }
 
-        function deleteJob(id) {
-            if(confirm('Are you sure you want to delete this job?')) {
-                let savedJobs = JSON.parse(localStorage.getItem('zambian_jobs_data')) || [];
-                savedJobs = savedJobs.filter(j => j.id !== id);
-                localStorage.setItem('zambian_jobs_data', JSON.stringify(savedJobs));
-                
-                // Refresh local state
-                allJobs = [...savedJobs, ...mockJobs];
-                allJobs = allJobs.filter((job, index, self) => index === self.findIndex((t) => (t.id === job.id)));
-                filteredJobs = allJobs;
-                
+        // Deleting removes the job from the website for everyone, automatically
+        async function deleteJob(id) {
+            id = String(id);
+            if (!confirm('Are you sure you want to delete this job?')) return;
+            if (!hasDb) { alert('Firebase is not connected.'); return; }
+
+            try {
+                const tasks = [];
+                if (firebaseJobs.some(j => String(j.id) === id)) {
+                    tasks.push(db.collection('jobs').doc(id).delete());
+                }
+                if (mockJobs.some(j => String(j.id) === id)) {
+                    tasks.push(db.collection('hiddenJobs').doc(id).set({
+                        hidden: true,
+                        hiddenAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }));
+                }
+                await Promise.all(tasks);
                 showToast('Job Deleted');
-                renderAdminJobs();
+            } catch (error) {
+                console.error('Delete job error:', error);
+                alert('Could not delete the job. Check your Firebase rules.');
             }
         }
 
