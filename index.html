@@ -896,7 +896,7 @@
 
         const hasDb = (typeof db !== 'undefined');
         const hasAuth = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function');
-        const ADMIN_EMAIL = 'malkamedia10@gmail.com';
+        const ADMIN_EMAIL = 'malamakabanda1@gmail.com';
 
         window.onload = function() {
             // Check Terms and Conditions
@@ -1256,6 +1256,9 @@
             document.querySelectorAll('.love-btn').forEach(el => {
                 el.textContent = userLikedJobs[el.dataset.id] ? '❤️' : '🤍';
             });
+            document.querySelectorAll('.admin-like-count').forEach(el => {
+                el.textContent = likesData[el.dataset.id] || 0;
+            });
         }
 
         function loadMore() {
@@ -1587,7 +1590,7 @@
                     <div class="admin-job-info">
                         <strong>${esc(job.title)}</strong><br>
                         ${esc(job.company)} - ${esc(cleanLocation(job.location, 40))}<br>
-                        <small>${esc(postedLabel(job))}</small>
+                        <small>${esc(postedLabel(job))} · ❤️ <span class="admin-like-count" data-id="${esc(String(job.id))}">${likesData[String(job.id)] || 0}</span> likes</small>
                     </div>
                     <button class="delete-btn" type="button">Delete</button>
                 `;
