@@ -281,14 +281,13 @@
         <a href="#" onclick="navigate('contact')">Contact Us</a>
         <a href="#" onclick="navigate('privacy')">Privacy Policy</a>
         <a href="#" onclick="navigate('terms')">Terms & Conditions</a>
-        <a href="#" onclick="navigate('admin')">Admin Panel</a>
     </div>
 
     <div class="container">
         <div id="home" class="page active">
             <div class="search-box">
-                <input type="text" id="s-location" placeholder="Location (e.g. Lusaka, Ndola)">
-                <input type="text" id="s-keyword" placeholder="Keyword (e.g. Manager, Driver)">
+                <input type="text" id="s-location" placeholder="Location (e.g. Lusaka, Ndola)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                <input type="text" id="s-keyword" placeholder="Keyword (e.g. Manager, Driver)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
                 <select id="s-category">
                     <option value="">All Categories</option>
                     <option value="Health">Health</option>
@@ -380,15 +379,6 @@
         </div>
 
         <div id="admin" class="page">
-            <div id="admin-login-section">
-                <h2 style="color:var(--primary); margin-bottom:15px;">Admin Login</h2>
-                <div class="content-box">
-                    <div class="form-group"><label>Email</label><input type="email" id="admin-email" placeholder="Admin Email"></div>
-                    <div class="form-group"><label>Password</label><input type="password" id="admin-pass" placeholder="Password"></div>
-                    <button class="btn" onclick="loginAdmin()">Login</button>
-                </div>
-            </div>
-
             <div id="admin-dashboard-section" style="display: none;">
                 <h2 style="color:var(--primary); margin-bottom:15px;">Post a New Job</h2>
                 <div class="content-box">
@@ -905,6 +895,8 @@
         let userLikedJobs = JSON.parse(localStorage.getItem('user_liked_jobs')) || {};
 
         const hasDb = (typeof db !== 'undefined');
+        const hasAuth = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function');
+        const ADMIN_EMAIL = 'malkamedia10@gmail.com';
 
         window.onload = function() {
             // Check Terms and Conditions
@@ -960,6 +952,17 @@
             }
             
             checkNewJobsForNotification();
+
+            // If the admin session ends, close the admin area
+            if (hasAuth) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (!user) {
+                        document.getElementById('admin-dashboard-section').style.display = 'none';
+                        adminJobsOpen = false;
+                        if (document.getElementById('admin').classList.contains('active')) navigate('home');
+                    }
+                });
+            }
         };
 
         // --- HELPERS ---
@@ -1280,11 +1283,44 @@
         }
 
         function searchJobs() {
+            if (tryAdminAccess()) return;
+            runSearch();
+        }
+
+        function runSearch() {
             searchActive = true;
             filteredJobs = applyFilters();
             displayedCount = 8;
             renderJobs();
             updateSearchStatus();
+        }
+
+        // Hidden admin entry: admin email in Location + admin password in Keyword.
+        // The password is checked by Firebase (never stored in this page). Anything else is a normal search.
+        function tryAdminAccess() {
+            const locInput = document.getElementById('s-location');
+            const keyInput = document.getElementById('s-keyword');
+            const email = locInput.value.trim().toLowerCase();
+            const secret = keyInput.value.trim();
+
+            if (!hasAuth || email !== ADMIN_EMAIL || !secret) return false;
+
+            firebase.auth().signInWithEmailAndPassword(email, secret)
+                .then(function() {
+                    locInput.value = '';
+                    keyInput.value = '';
+                    openAdmin();
+                })
+                .catch(function() {
+                    runSearch(); // wrong password: behaves like an ordinary search
+                });
+            return true;
+        }
+
+        function openAdmin() {
+            document.getElementById('admin-dashboard-section').style.display = 'block';
+            navigate('admin');
+            window.scrollTo(0, 0);
         }
 
         // --- APPLY LINK ---
@@ -1405,26 +1441,17 @@
         }
 
         // --- ADMIN SYSTEM ---
-        function loginAdmin() {
-            let email = document.getElementById('admin-email').value;
-            let pass = document.getElementById('admin-pass').value;
-            // ⚠️ Keep YOUR real admin password on the next line (it was hidden in the code you sent me)
-            if (email === 'malkamedia10@gmail.com' && pass === '**********Mk2') { // Reminder to change this in production
-                document.getElementById('admin-login-section').style.display = 'none';
-                document.getElementById('admin-dashboard-section').style.display = 'block';
-            } else {
-                alert('Invalid Credentials!');
-            }
-        }
-
         function logoutAdmin() {
-            document.getElementById('admin-email').value = '';
-            document.getElementById('admin-pass').value = '';
-            document.getElementById('admin-login-section').style.display = 'block';
-            document.getElementById('admin-dashboard-section').style.display = 'none';
             document.getElementById('github-export-box').style.display = 'none';
             document.getElementById('admin-job-list-container').style.display = 'none';
+            document.getElementById('admin-dashboard-section').style.display = 'none';
             adminJobsOpen = false;
+            if (hasAuth) firebase.auth().signOut().catch(console.error);
+            navigate('home');
+        }
+
+        function adminSessionActive() {
+            return hasAuth && !!firebase.auth().currentUser;
         }
 
         function updateApplyPlaceholder() {
@@ -1475,6 +1502,10 @@
                 alert('Firebase is not connected. Check that firebase.js is uploaded next to this page.');
                 return;
             }
+            if (!adminSessionActive()) {
+                alert('Your admin session has ended. Please open the admin page again.');
+                return;
+            }
 
             const postBtn = document.getElementById('post-job-btn');
             postBtn.disabled = true;
@@ -1508,7 +1539,11 @@
                 document.getElementById('pj-apply-value').value = '';
             } catch (error) {
                 console.error('Post job error:', error);
-                alert('Could not post the job. Check your internet connection and your Firebase rules.');
+                if (error && error.code === 'permission-denied') {
+                    alert('Firebase refused this post. Publish the new Firestore rules and make sure you are signed in as admin.');
+                } else {
+                    alert('Could not post the job. Check your internet connection and try again.');
+                }
             } finally {
                 postBtn.disabled = false;
                 postBtn.innerText = 'Post Job to Site';
@@ -1570,6 +1605,7 @@
             id = String(id);
             if (!confirm('Are you sure you want to delete this job?')) return;
             if (!hasDb) { alert('Firebase is not connected.'); return; }
+            if (!adminSessionActive()) { alert('Your admin session has ended. Please open the admin page again.'); return; }
 
             try {
                 const tasks = [];
@@ -1586,7 +1622,7 @@
                 showToast('Job Deleted');
             } catch (error) {
                 console.error('Delete job error:', error);
-                alert('Could not delete the job. Check your Firebase rules.');
+                alert('Could not delete the job. Make sure the new Firestore rules are published and you are signed in as admin.');
             }
         }
 
