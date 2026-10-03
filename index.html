@@ -182,6 +182,22 @@
         }
         .apply-btn:hover { background-color: #008800; }
 
+        /* Job photo + copyable text (job details) */
+        .job-photo-box { margin-bottom: 15px; color: var(--text-light); font-size: 14px; }
+        .job-photo { width: 100%; height: auto; display: block; border-radius: 6px; border: 1px solid var(--border-color); }
+        .photo-text-box {
+            background: rgba(128,128,128,0.08); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 12px;
+        }
+        .photo-text-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--text-dark); }
+        .copy-btn {
+            background: rgba(255, 140, 0, 0.1); color: var(--secondary); border: none;
+            padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; flex-shrink: 0;
+        }
+        .copy-btn:hover { background: rgba(255, 140, 0, 0.2); }
+        .photo-text { line-height: 1.6; color: var(--text-dark); white-space: pre-wrap; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+        .admin-photo-preview { max-width: 100%; max-height: 260px; border-radius: 6px; margin-top: 10px; border: 1px solid var(--border-color); display: block; }
+
         /* Promo Box */
         .promo-box {
             background-color: rgba(0, 170, 0, 0.1); border: 2px dashed var(--primary); padding: 15px;
@@ -387,7 +403,19 @@
                     <div class="form-group"><label>Location</label><input type="text" id="pj-location"></div>
                     <div class="form-group"><label>Category</label><select id="pj-category"><option>Health</option><option>Finance</option><option>Education</option><option>Agriculture</option><option>Others</option></select></div>
                     <div class="form-group"><label>Type</label><select id="pj-type"><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Temporary</option><option>Tender</option></select></div>
-                    <div class="form-group"><label>Description</label><textarea id="pj-desc" rows="4"></textarea></div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="pj-desc" rows="4" placeholder="Write the job details here, or add a photo below"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Or Add a Photo of the Job</label>
+                        <input type="file" id="pj-photo" accept="image/*" onchange="handlePhotoSelected(this)">
+                        <div id="pj-photo-preview" style="display:none;">
+                            <img id="pj-photo-img" class="admin-photo-preview" alt="Selected job photo">
+                            <p id="pj-photo-status" style="font-size:13px; color:var(--text-light); margin:8px 0;"></p>
+                            <button class="btn" type="button" style="background:#444; width:auto; padding:6px 14px; font-size:14px;" onclick="removePhoto()">Remove Photo</button>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>How Should Applicants Apply?</label>
                         <select id="pj-apply-type" onchange="updateApplyPlaceholder()">
@@ -890,6 +918,10 @@
         let sharedJobId = null;
         let sharedHandled = false;
         const likeBusy = {};
+        const imageCache = {};
+        let pendingPhoto = null;   // compressed photo waiting to be posted
+        let ocrRunning = false;
+        let photoToken = 0;
         
         let likesData = JSON.parse(localStorage.getItem('job_likes')) || {};
         let userLikedJobs = JSON.parse(localStorage.getItem('user_liked_jobs')) || {};
@@ -941,9 +973,11 @@
 
                 // 3) Shared like counts
                 db.collection("jobLikes").onSnapshot(snapshot => {
+                    const fresh = {};
                     snapshot.forEach(doc => {
-                        likesData[doc.id] = Math.max(0, Number(doc.data().count) || 0);
+                        fresh[doc.id] = Math.max(0, Number(doc.data().count) || 0);
                     });
+                    likesData = fresh;
                     localStorage.setItem('job_likes', JSON.stringify(likesData));
                     refreshLikeUI();
                 }, error => console.error("Likes listener error:", error));
@@ -1024,7 +1058,8 @@
                 desc: data.details || data.desc || "",
                 email: data.email || "",
                 applyType: data.applyType || "",
-                applyValue: data.applyValue || ""
+                applyValue: data.applyValue || "",
+                hasImage: !!data.hasImage
             };
         }
 
@@ -1245,7 +1280,14 @@
                 db.collection('jobLikes').doc(id)
                     .set({ count: firebase.firestore.FieldValue.increment(delta) }, { merge: true })
                     .then(() => { likeBusy[id] = false; })
-                    .catch(err => { likeBusy[id] = false; console.error('Like could not be saved:', err); });
+                    .catch(err => {
+                        likeBusy[id] = false;
+                        console.error('Like could not be saved:', err);
+                        userLikedJobs[id] = wasLiked;
+                        localStorage.setItem('user_liked_jobs', JSON.stringify(userLikedJobs));
+                        refreshLikeUI();
+                        showToast('Your like could not be saved. Please try again.');
+                    });
             }
         }
 
@@ -1420,6 +1462,23 @@
                 console.warn('Apply button skipped:', e);
             }
 
+            let descriptionHtml;
+            if (job.hasImage) {
+                descriptionHtml = `
+                    <div class="job-photo-box" id="job-photo-box">Loading photo...</div>
+                    ${job.desc ? `
+                    <div class="photo-text-box">
+                        <div class="photo-text-head">
+                            <strong>Text from the photo</strong>
+                            <button class="copy-btn" id="copy-text-btn" type="button">📋 Copy Text</button>
+                        </div>
+                        <p class="photo-text">${esc(job.desc)}</p>
+                    </div>` : ''}
+                `;
+            } else {
+                descriptionHtml = `<p style="line-height:1.6; color:var(--text-dark); white-space: pre-wrap; overflow-wrap:anywhere;">${esc(job.desc)}</p>`;
+            }
+
             let detailsHtml = `
                 <h2 style="color:var(--primary); overflow-wrap:anywhere;">${esc(job.title)}</h2>
                 <h4 style="color:var(--text-light); margin-bottom:5px;">${esc(job.company)}</h4>
@@ -1430,13 +1489,19 @@
                 <p><strong>Date:</strong> <span style="color:var(--text-dark)">${esc(postedLabel(job))}</span></p>
                 <hr style="margin: 15px 0; border: 1px solid var(--border-color);">
                 <h3 style="color:var(--primary);">Job Description</h3><br>
-                <p style="line-height:1.6; color:var(--text-dark); white-space: pre-wrap; overflow-wrap:anywhere;">${esc(job.desc)}</p>
+                ${descriptionHtml}
                 ${applyHtml}
             `;
             document.getElementById('details-content').innerHTML = detailsHtml;
             document.getElementById('details-share-btn').addEventListener('click', function(event) {
                 shareJob(event, job.id);
             });
+
+            const copyBtn = document.getElementById('copy-text-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() { copyText(job.desc); });
+            }
+            if (job.hasImage) loadJobPhoto(job);
 
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById('job-details').classList.add('active');
@@ -1476,6 +1541,167 @@
             }
         }
 
+        // --- JOB PHOTO (admin) ---
+        // Shrinks the photo so it fits safely in Firebase (keeps it sharp enough to read)
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Could not read file'));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('Not a valid image'));
+                    img.onload = () => {
+                        let maxW = 1600, quality = 0.8;
+                        for (let i = 0; i < 12; i++) {
+                            const scale = Math.min(1, maxW / img.width);
+                            const canvas = document.createElement('canvas');
+                            canvas.width = Math.max(1, Math.round(img.width * scale));
+                            canvas.height = Math.max(1, Math.round(img.height * scale));
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            if (dataUrl.length <= 850000) { resolve({ dataUrl: dataUrl, canvas: canvas }); return; }
+                            maxW = Math.round(maxW * 0.85);
+                            quality = Math.max(0.55, quality - 0.04);
+                        }
+                        reject(new Error('Photo too large'));
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Text reader (OCR) is only downloaded when the admin adds a photo
+        function loadTesseract() {
+            return new Promise((resolve, reject) => {
+                if (window.Tesseract) { resolve(window.Tesseract); return; }
+                const sc = document.createElement('script');
+                sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                sc.onload = () => resolve(window.Tesseract);
+                sc.onerror = () => reject(new Error('Text reader could not load'));
+                document.head.appendChild(sc);
+            });
+        }
+
+        async function handlePhotoSelected(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            if (!/^image\//.test(file.type)) {
+                alert('Please choose an image file.');
+                input.value = '';
+                return;
+            }
+
+            const token = ++photoToken;
+            const status = document.getElementById('pj-photo-status');
+            document.getElementById('pj-photo-preview').style.display = 'block';
+            status.textContent = 'Preparing photo...';
+            pendingPhoto = null;
+            ocrRunning = false;
+
+            let result;
+            try {
+                result = await compressImage(file);
+            } catch (e) {
+                if (token !== photoToken) return;
+                removePhoto();
+                alert('That photo could not be used. Please try a different one.');
+                return;
+            }
+            if (token !== photoToken) return;
+            pendingPhoto = result.dataUrl;
+            document.getElementById('pj-photo-img').src = result.dataUrl;
+
+            // Read the words in the photo so visitors can copy them
+            ocrRunning = true;
+            status.textContent = 'Reading the text in the photo...';
+            try {
+                const Tesseract = await loadTesseract();
+                const ocr = await Tesseract.recognize(result.canvas, 'eng', {
+                    logger: function(m) {
+                        if (token === photoToken && m.status === 'recognizing text') {
+                            status.textContent = 'Reading the text in the photo... ' + Math.round(m.progress * 100) + '%';
+                        }
+                    }
+                });
+                if (token !== photoToken) return;
+                const text = String((ocr.data && ocr.data.text) || '').replace(/\n{3,}/g, '\n\n').trim();
+                const descBox = document.getElementById('pj-desc');
+                if (text && !descBox.value.trim()) {
+                    descBox.value = text;
+                    status.textContent = 'Done. The text found in the photo was added to the Description box. Please check and correct it before posting.';
+                } else if (text) {
+                    status.textContent = 'Photo added. Your typed description will be shown with the photo.';
+                } else {
+                    status.textContent = 'Photo added. No text could be read, you can type the details in the Description box.';
+                }
+            } catch (e) {
+                if (token !== photoToken) return;
+                console.warn('Photo text reading skipped:', e);
+                status.textContent = 'Photo added. The text could not be read automatically, you can type it in the Description box.';
+            } finally {
+                if (token === photoToken) ocrRunning = false;
+            }
+        }
+
+        function removePhoto() {
+            photoToken++;
+            pendingPhoto = null;
+            ocrRunning = false;
+            document.getElementById('pj-photo').value = '';
+            document.getElementById('pj-photo-img').removeAttribute('src');
+            document.getElementById('pj-photo-status').textContent = '';
+            document.getElementById('pj-photo-preview').style.display = 'none';
+        }
+
+        // --- JOB PHOTO (visitors) ---
+        async function loadJobPhoto(job) {
+            const box = document.getElementById('job-photo-box');
+            if (!box) return;
+            const key = String(job.id);
+            try {
+                if (!hasDb) throw new Error('No database');
+                if (!imageCache[key]) {
+                    const doc = await db.collection('jobImages').doc(key).get();
+                    if (!doc.exists) throw new Error('Photo missing');
+                    imageCache[key] = doc.data().image;
+                }
+                if (!box.isConnected) return; // visitor already moved to another page
+                box.innerHTML = '';
+                const img = document.createElement('img');
+                img.className = 'job-photo';
+                img.alt = job.title + ' - job details';
+                img.src = imageCache[key];
+                box.appendChild(img);
+            } catch (e) {
+                console.warn('Job photo error:', e);
+                if (box.isConnected) box.textContent = 'The photo could not be loaded. Please try again later.';
+            }
+        }
+
+        function copyText(text) {
+            const done = function() { showToast('Text copied!'); };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(function() { fallbackCopy(text, done); });
+            } else {
+                fallbackCopy(text, done);
+            }
+        }
+
+        function fallbackCopy(text, done) {
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try { document.execCommand('copy'); done(); } catch (e) { showToast('Press and hold the text to copy it.'); }
+            document.body.removeChild(area);
+        }
+
         async function postJob() {
             let title = document.getElementById('pj-title').value.trim();
             let company = document.getElementById('pj-company').value.trim();
@@ -1486,8 +1712,12 @@
             let applyType = document.getElementById('pj-apply-type').value;
             let applyValue = document.getElementById('pj-apply-value').value.trim();
 
-            if(!title || !company || !location || !desc || !applyValue) {
-                alert('Please fill all fields, including the application link / email / number!');
+            if(!title || !company || !location || (!desc && !pendingPhoto) || !applyValue) {
+                alert('Please fill in the title, company, location and application link, and add a description or a photo.');
+                return;
+            }
+            if (ocrRunning) {
+                alert('Please wait a moment, the text in the photo is still being read.');
                 return;
             }
 
@@ -1516,7 +1746,9 @@
 
             try {
                 // Saved straight to Firebase, so it shows on the website automatically
-                await db.collection('jobs').add({
+                const jobRef = db.collection('jobs').doc();
+                const batch = db.batch();
+                batch.set(jobRef, {
                     title: title,
                     company: company,
                     location: location,
@@ -1526,8 +1758,17 @@
                     details: desc,
                     applyType: applyType,
                     applyValue: applyValue,
+                    hasImage: !!pendingPhoto,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                // The photo is stored separately so the job list stays fast for visitors
+                if (pendingPhoto) {
+                    batch.set(db.collection('jobImages').doc(jobRef.id), {
+                        image: pendingPhoto,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                await batch.commit();
 
                 // Set notification for users
                 localStorage.setItem('latest_job_notif', `New Job Alert: ${title} at ${company}!`);
@@ -1540,6 +1781,7 @@
                 document.getElementById('pj-location').value = '';
                 document.getElementById('pj-desc').value = '';
                 document.getElementById('pj-apply-value').value = '';
+                removePhoto();
             } catch (error) {
                 console.error('Post job error:', error);
                 if (error && error.code === 'permission-denied') {
@@ -1612,8 +1854,10 @@
 
             try {
                 const tasks = [];
-                if (firebaseJobs.some(j => String(j.id) === id)) {
+                const fbJob = firebaseJobs.find(j => String(j.id) === id);
+                if (fbJob) {
                     tasks.push(db.collection('jobs').doc(id).delete());
+                    if (fbJob.hasImage) tasks.push(db.collection('jobImages').doc(id).delete());
                 }
                 if (mockJobs.some(j => String(j.id) === id)) {
                     tasks.push(db.collection('hiddenJobs').doc(id).set({
