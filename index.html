@@ -198,6 +198,24 @@
         .photo-text { line-height: 1.6; color: var(--text-dark); white-space: pre-wrap; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
         .admin-photo-preview { max-width: 100%; max-height: 260px; border-radius: 6px; margin-top: 10px; border: 1px solid var(--border-color); display: block; }
 
+        /* Ads (in the job list) */
+        .ad-card {
+            position: relative; background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; margin-bottom: 15px; overflow: hidden; cursor: pointer;
+        }
+        .ad-label {
+            position: absolute; top: 8px; left: 8px; z-index: 2; font-size: 11px; font-weight: bold;
+            background: rgba(0,0,0,0.65); color: #fff; padding: 2px 9px; border-radius: 10px;
+        }
+        .ad-close {
+            position: absolute; top: 6px; right: 6px; z-index: 2; width: 28px; height: 28px;
+            border-radius: 50%; border: none; background: rgba(0,0,0,0.65); color: #fff;
+            font-size: 15px; line-height: 1; cursor: pointer;
+        }
+        .ad-close:hover { background: rgba(0,0,0,0.9); }
+        .ad-media { display: block; width: 100%; height: auto; max-height: 520px; background: #000; }
+        .ad-loading { padding: 50px 15px; text-align: center; color: var(--text-light); font-size: 14px; }
+
         /* Promo Box */
         .promo-box {
             background-color: rgba(0, 170, 0, 0.1); border: 2px dashed var(--primary); padding: 15px;
@@ -396,6 +414,14 @@
 
         <div id="admin" class="page">
             <div id="admin-dashboard-section" style="display: none;">
+                <div class="content-box" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <div>
+                        <div style="color:var(--text-light); font-size:13px;">Visitors on the site right now</div>
+                        <div id="live-count" style="font-size:30px; font-weight:bold; color:var(--primary);">–</div>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-light); text-align:right;">Updates every<br>45 seconds</div>
+                </div>
+
                 <h2 style="color:var(--primary); margin-bottom:15px;">Post a New Job</h2>
                 <div class="content-box">
                     <div class="form-group"><label>Job Title</label><input type="text" id="pj-title"></div>
@@ -438,6 +464,41 @@
                         <div id="admin-jobs-wrapper"></div>
                     </div>
 
+                    <button class="btn" style="background:#6a1b9a; margin-top:15px;" onclick="toggleAdPanel()">Post An Ad</button>
+
+                    <div id="ad-panel" style="display:none; margin-top:15px; border-top:1px solid var(--border-color); padding-top:15px;">
+                        <h3 style="color:var(--secondary); margin-bottom:10px;">Post An Ad</h3>
+                        <div class="form-group"><label>Ad Name (only you see this)</label><input type="text" id="ad-name" placeholder="e.g. Malka Media CV Service"></div>
+                        <div class="form-group">
+                            <label>Select a Photo or Video</label>
+                            <input type="file" id="ad-media" accept="image/*,video/*" onchange="handleAdMediaSelected(this)">
+                            <div id="ad-media-preview" style="display:none;">
+                                <img id="ad-media-img" class="admin-photo-preview" alt="Ad preview" style="display:none;">
+                                <video id="ad-media-video" class="admin-photo-preview" muted playsinline controls style="display:none;"></video>
+                                <p id="ad-media-status" style="font-size:13px; color:var(--text-light); margin:8px 0;"></p>
+                                <button class="btn" type="button" style="background:#444; width:auto; padding:6px 14px; font-size:14px;" onclick="removeAdMedia()">Remove</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Where Should The Ad Take People?</label>
+                            <select id="ad-link-type" onchange="updateAdPlaceholder()">
+                                <option value="link">Link (Website, Facebook, Instagram, TikTok, any post)</option>
+                                <option value="email">Email Address</option>
+                                <option value="whatsapp">WhatsApp Number</option>
+                                <option value="call">Phone Number (Call)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label id="ad-link-label">Ad Link</label>
+                            <input type="text" id="ad-link-value" placeholder="https://... (website, Facebook, Instagram, TikTok, any post)">
+                        </div>
+                        <button class="btn" id="post-ad-btn" onclick="postAd()">Post Ad</button>
+
+                        <h3 style="color:var(--secondary); margin:20px 0 6px;">Your Ads</h3>
+                        <p style="font-size:12px; color:var(--text-light); margin-bottom:10px;">Ads show after the 3rd job, then after every 4 jobs. Views count once per visitor.</p>
+                        <div id="admin-ads-wrapper"></div>
+                    </div>
+
                     <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
                     <h3 style="color:#ff8c00; margin-bottom:10px;">GitHub Persistence Tool</h3>
                     <p style="font-size:13px; color:var(--text-light); margin-bottom:10px;">To prevent losing jobs when updating GitHub, click Export, copy the code, and replace the 'mockJobs' array in your HTML file with it.</p>
@@ -458,6 +519,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="firebase.js"></script>
 
     <script>
@@ -922,6 +984,22 @@
         let pendingPhoto = null;   // compressed photo waiting to be posted
         let ocrRunning = false;
         let photoToken = 0;
+
+        // Ads
+        const AD_FIRST_AFTER = 3;    // first ad appears after this many jobs
+        const AD_REPEAT_EVERY = 4;   // then again after every this many jobs
+        const AD_VIDEO_MAX_BYTES = 20 * 1024 * 1024;
+        let ads = [];
+        const adImageCache = {};
+        let adViewsData = {};
+        let adClicksData = {};
+        let pendingAdMedia = null;   // { type: 'image', dataUrl } or { type: 'video', file }
+        let adVideoPreviewUrl = null;
+        let adToken = 0;
+        let adPanelOpen = false;
+        let adObserver = null;
+        let adStatUnsubs = [];
+        let liveTimer = null;
         
         let likesData = JSON.parse(localStorage.getItem('job_likes')) || {};
         let userLikedJobs = JSON.parse(localStorage.getItem('user_liked_jobs')) || {};
@@ -981,6 +1059,26 @@
                     localStorage.setItem('job_likes', JSON.stringify(likesData));
                     refreshLikeUI();
                 }, error => console.error("Likes listener error:", error));
+
+                // 4) Ads posted from the admin page
+                db.collection("ads").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                    ads = snapshot.docs.map(doc => {
+                        const d = doc.data();
+                        return {
+                            id: doc.id,
+                            name: d.name || "",
+                            mediaType: d.mediaType || "image",
+                            mediaUrl: d.mediaUrl || "",
+                            linkType: d.linkType || "link",
+                            linkValue: d.linkValue || ""
+                        };
+                    });
+                    renderJobs();
+                    if (adPanelOpen) renderAdminAds();
+                }, error => console.error("Ads listener error:", error));
+
+                // 5) Let the admin see how many visitors are on the site
+                startHeartbeat();
             } else {
                 firstSnapshotDone = true;
             }
@@ -993,6 +1091,7 @@
                     if (!user) {
                         document.getElementById('admin-dashboard-section').style.display = 'none';
                         adminJobsOpen = false;
+                        stopAdminLiveFeatures();
                         if (document.getElementById('admin').classList.contains('active')) navigate('home');
                     }
                 });
@@ -1187,7 +1286,10 @@
 
             const jobsToShow = filteredJobs.slice(0, displayedCount);
 
-            jobsToShow.forEach(job => {
+            if (adObserver) adObserver.disconnect();
+            let adSlot = 0;
+
+            jobsToShow.forEach((job, index) => {
                 const jobId = String(job.id);
                 const card = document.createElement('div');
                 card.className = 'job-card';
@@ -1229,6 +1331,13 @@
                 });
 
                 jobList.appendChild(card);
+
+                // An ad after the 3rd job, then after every 4 jobs
+                const position = index + 1;
+                if (position === AD_FIRST_AFTER || (position > AD_FIRST_AFTER && (position - AD_FIRST_AFTER) % AD_REPEAT_EVERY === 0)) {
+                    const adEl = buildAdElement(adSlot++);
+                    if (adEl) jobList.appendChild(adEl);
+                }
             });
 
             document.getElementById('load-more-btn').style.display =
@@ -1366,6 +1475,7 @@
             document.getElementById('admin-dashboard-section').style.display = 'block';
             navigate('admin');
             window.scrollTo(0, 0);
+            startAdminLiveFeatures();
         }
 
         // --- APPLY LINK ---
@@ -1514,6 +1624,9 @@
             document.getElementById('admin-job-list-container').style.display = 'none';
             document.getElementById('admin-dashboard-section').style.display = 'none';
             adminJobsOpen = false;
+            document.getElementById('ad-panel').style.display = 'none';
+            adPanelOpen = false;
+            stopAdminLiveFeatures();
             if (hasAuth) firebase.auth().signOut().catch(console.error);
             navigate('home');
         }
@@ -1541,9 +1654,475 @@
             }
         }
 
+        // --- ADS (visitors) ---
+        function getDismissedAds() {
+            try { return JSON.parse(sessionStorage.getItem('dismissed_ads')) || {}; } catch (e) { return {}; }
+        }
+
+        function dismissAd(adId) {
+            const dismissed = getDismissedAds();
+            dismissed[adId] = true;
+            try { sessionStorage.setItem('dismissed_ads', JSON.stringify(dismissed)); } catch (e) {}
+            renderJobs();
+        }
+
+        function buildAdHref(ad) {
+            const value = String(ad.linkValue || '').trim();
+            if (!value) return '';
+            switch (ad.linkType) {
+                case 'email':
+                    return 'mailto:' + value;
+                case 'whatsapp': {
+                    const num = normalizePhone(value);
+                    return num ? 'https://wa.me/' + num + '?text=' + encodeURIComponent('Hello, I saw your ad on Zambian Jobs.') : '';
+                }
+                case 'call': {
+                    const num = normalizePhone(value);
+                    return num ? 'tel:+' + num : '';
+                }
+                default:
+                    return /^https?:\/\//i.test(value) ? value : 'https://' + value;
+            }
+        }
+
+        function bumpAdCounter(collection, adId) {
+            if (!hasDb || adminSessionActive()) return; // your own views and clicks are not counted
+            db.collection(collection).doc(String(adId))
+                .set({ count: firebase.firestore.FieldValue.increment(1) }, { merge: true })
+                .catch(err => console.warn('Ad count skipped:', err));
+        }
+
+        // A view is counted once per visitor session, when at least half of the ad is on screen
+        function trackAdView(adId) {
+            const key = 'ad_viewed_' + adId;
+            try {
+                if (sessionStorage.getItem(key)) return;
+                sessionStorage.setItem(key, '1');
+            } catch (e) {}
+            bumpAdCounter('adViews', adId);
+        }
+
+        function openAd(ad) {
+            const href = buildAdHref(ad);
+            if (!href) return;
+            bumpAdCounter('adClicks', ad.id);
+            if (ad.linkType === 'email' || ad.linkType === 'call') {
+                window.location.href = href;
+            } else {
+                window.open(href, '_blank', 'noopener');
+            }
+        }
+
+        function observeAd(card) {
+            if (!('IntersectionObserver' in window)) { trackAdView(card.dataset.adId); return; }
+            if (!adObserver) {
+                adObserver = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        const el = entry.target;
+                        const video = el.querySelector('video');
+                        if (entry.isIntersecting) {
+                            trackAdView(el.dataset.adId);
+                            if (video) video.play().catch(function() {});
+                        } else if (video) {
+                            video.pause();
+                        }
+                    });
+                }, { threshold: 0.5 });
+            }
+            adObserver.observe(card);
+        }
+
+        async function fillAdMedia(card, ad) {
+            const body = card.querySelector('.ad-body');
+            try {
+                if (ad.mediaType === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'ad-media';
+                    video.muted = true;
+                    video.loop = true;
+                    video.autoplay = true;
+                    video.playsInline = true;
+                    video.preload = 'metadata';
+                    video.setAttribute('muted', '');
+                    video.setAttribute('playsinline', '');
+                    video.src = ad.mediaUrl;
+                    body.innerHTML = '';
+                    body.appendChild(video);
+                } else {
+                    let src = adImageCache[ad.id];
+                    if (!src) {
+                        const doc = await db.collection('adImages').doc(ad.id).get();
+                        if (!doc.exists) throw new Error('Ad photo missing');
+                        src = doc.data().image;
+                        adImageCache[ad.id] = src;
+                    }
+                    const img = document.createElement('img');
+                    img.className = 'ad-media';
+                    img.alt = 'Advertisement';
+                    img.src = src;
+                    body.innerHTML = '';
+                    body.appendChild(img);
+                }
+                observeAd(card);
+            } catch (e) {
+                console.warn('Ad could not load:', e);
+                card.remove();
+            }
+        }
+
+        function buildAdElement(slot) {
+            const dismissed = getDismissedAds();
+            const visibleAds = ads.filter(a => !dismissed[a.id]);
+            if (visibleAds.length === 0) return null;
+
+            const ad = visibleAds[slot % visibleAds.length];
+            const card = document.createElement('div');
+            card.className = 'ad-card';
+            card.dataset.adId = ad.id;
+            card.innerHTML = `
+                <span class="ad-label">Ad</span>
+                <button class="ad-close" type="button" aria-label="Close ad">✕</button>
+                <div class="ad-body"><div class="ad-loading">Loading...</div></div>
+            `;
+            card.querySelector('.ad-close').addEventListener('click', function(event) {
+                event.stopPropagation();
+                dismissAd(ad.id);
+            });
+            card.addEventListener('click', function() { openAd(ad); });
+            fillAdMedia(card, ad);
+            return card;
+        }
+
+        // --- LIVE VISITORS ---
+        function getDeviceId() {
+            let id = localStorage.getItem('device_id');
+            if (!id) {
+                id = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                localStorage.setItem('device_id', id);
+            }
+            return id;
+        }
+
+        function sendHeartbeat() {
+            if (!hasDb || document.visibilityState !== 'visible') return;
+            db.collection('presence').doc(getDeviceId())
+                .set({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() })
+                .catch(function() {});
+        }
+
+        function startHeartbeat() {
+            sendHeartbeat();
+            setInterval(sendHeartbeat, 60000);
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') sendHeartbeat();
+            });
+        }
+
+        async function refreshLiveCount() {
+            const el = document.getElementById('live-count');
+            if (!hasDb || !adminSessionActive() || !el) return;
+            try {
+                const cutoff = firebase.firestore.Timestamp.fromMillis(Date.now() - 120000);
+                const snap = await db.collection('presence').where('lastSeen', '>=', cutoff).get();
+                const me = getDeviceId();
+                let count = 0;
+                snap.forEach(function(doc) { if (doc.id !== me) count++; });
+                el.textContent = count;
+            } catch (e) {
+                console.warn('Live count unavailable:', e);
+                el.textContent = '–';
+            }
+        }
+
+        async function cleanupOldPresence() {
+            try {
+                const cutoff = firebase.firestore.Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+                const snap = await db.collection('presence').where('lastSeen', '<', cutoff).limit(300).get();
+                if (snap.empty) return;
+                const batch = db.batch();
+                snap.forEach(function(doc) { batch.delete(doc.ref); });
+                await batch.commit();
+            } catch (e) {
+                console.warn('Presence cleanup skipped:', e);
+            }
+        }
+
+        function refreshAdStatsUI() {
+            document.querySelectorAll('.ad-stat-views').forEach(function(el) { el.textContent = adViewsData[el.dataset.id] || 0; });
+            document.querySelectorAll('.ad-stat-clicks').forEach(function(el) { el.textContent = adClicksData[el.dataset.id] || 0; });
+        }
+
+        function startAdminLiveFeatures() {
+            stopAdminLiveFeatures();
+            if (!hasDb) return;
+            adStatUnsubs.push(db.collection('adViews').onSnapshot(function(snapshot) {
+                const data = {};
+                snapshot.forEach(function(doc) { data[doc.id] = Number(doc.data().count) || 0; });
+                adViewsData = data;
+                refreshAdStatsUI();
+            }, function(err) { console.warn('Ad views not readable:', err); }));
+            adStatUnsubs.push(db.collection('adClicks').onSnapshot(function(snapshot) {
+                const data = {};
+                snapshot.forEach(function(doc) { data[doc.id] = Number(doc.data().count) || 0; });
+                adClicksData = data;
+                refreshAdStatsUI();
+            }, function(err) { console.warn('Ad clicks not readable:', err); }));
+            refreshLiveCount();
+            liveTimer = setInterval(function() {
+                if (document.visibilityState === 'visible') refreshLiveCount();
+            }, 45000);
+            cleanupOldPresence();
+        }
+
+        function stopAdminLiveFeatures() {
+            adStatUnsubs.forEach(function(unsub) { try { unsub(); } catch (e) {} });
+            adStatUnsubs = [];
+            if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+        }
+
+        // --- ADS (admin) ---
+        function storageReady() {
+            try {
+                return typeof firebase !== 'undefined' && typeof firebase.storage === 'function' && !!firebase.app().options.storageBucket;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function toggleAdPanel() {
+            const panel = document.getElementById('ad-panel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                adPanelOpen = true;
+                renderAdminAds();
+            } else {
+                panel.style.display = 'none';
+                adPanelOpen = false;
+            }
+        }
+
+        function updateAdPlaceholder() {
+            const type = document.getElementById('ad-link-type').value;
+            const label = document.getElementById('ad-link-label');
+            const input = document.getElementById('ad-link-value');
+            if (type === 'email') {
+                label.innerText = 'Email Address';
+                input.placeholder = 'hello@company.com';
+            } else if (type === 'whatsapp') {
+                label.innerText = 'WhatsApp Number';
+                input.placeholder = 'e.g. 0971234567 or +260971234567';
+            } else if (type === 'call') {
+                label.innerText = 'Phone Number';
+                input.placeholder = 'e.g. 0971234567 or +260971234567';
+            } else {
+                label.innerText = 'Ad Link';
+                input.placeholder = 'https://... (website, Facebook, Instagram, TikTok, any post)';
+            }
+        }
+
+        function cleanAdLink(type, raw) {
+            let value = String(raw || '').trim();
+            if (type === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null;
+            if (type === 'whatsapp' || type === 'call') return normalizePhone(value) ? value : null;
+            if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
+            try { new URL(value); return value; } catch (e) { return null; }
+        }
+
+        async function handleAdMediaSelected(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            const token = ++adToken;
+            const preview = document.getElementById('ad-media-preview');
+            const img = document.getElementById('ad-media-img');
+            const video = document.getElementById('ad-media-video');
+            const status = document.getElementById('ad-media-status');
+            pendingAdMedia = null;
+            if (adVideoPreviewUrl) { URL.revokeObjectURL(adVideoPreviewUrl); adVideoPreviewUrl = null; }
+
+            if (/^image\//.test(file.type)) {
+                preview.style.display = 'block';
+                video.style.display = 'none';
+                video.removeAttribute('src');
+                img.style.display = 'block';
+                status.textContent = 'Preparing photo...';
+                try {
+                    const result = await compressImage(file, { maxW: 1000, quality: 0.75, maxChars: 400000 });
+                    if (token !== adToken) return;
+                    pendingAdMedia = { type: 'image', dataUrl: result.dataUrl };
+                    img.src = result.dataUrl;
+                    status.textContent = 'Photo ready.';
+                } catch (e) {
+                    if (token !== adToken) return;
+                    removeAdMedia();
+                    alert('That photo could not be used. Please try a different one.');
+                }
+            } else if (/^video\//.test(file.type)) {
+                if (!storageReady()) {
+                    alert('Video ads need Firebase Storage to be switched on for this project. You can still post a photo ad.');
+                    input.value = '';
+                    return;
+                }
+                if (file.size > AD_VIDEO_MAX_BYTES) {
+                    alert('That video is too big. Please choose a short video under 20 MB.');
+                    input.value = '';
+                    return;
+                }
+                preview.style.display = 'block';
+                img.style.display = 'none';
+                img.removeAttribute('src');
+                video.style.display = 'block';
+                adVideoPreviewUrl = URL.createObjectURL(file);
+                video.src = adVideoPreviewUrl;
+                pendingAdMedia = { type: 'video', file: file };
+                status.textContent = 'Video ready (' + (file.size / 1048576).toFixed(1) + ' MB).';
+            } else {
+                alert('Please choose a photo or a video.');
+                input.value = '';
+            }
+        }
+
+        function removeAdMedia() {
+            adToken++;
+            pendingAdMedia = null;
+            if (adVideoPreviewUrl) { URL.revokeObjectURL(adVideoPreviewUrl); adVideoPreviewUrl = null; }
+            document.getElementById('ad-media').value = '';
+            document.getElementById('ad-media-img').removeAttribute('src');
+            const video = document.getElementById('ad-media-video');
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            document.getElementById('ad-media-status').textContent = '';
+            document.getElementById('ad-media-preview').style.display = 'none';
+        }
+
+        async function postAd() {
+            const name = document.getElementById('ad-name').value.trim();
+            const linkType = document.getElementById('ad-link-type').value;
+            const rawLink = document.getElementById('ad-link-value').value;
+
+            if (!name || !pendingAdMedia || !rawLink.trim()) {
+                alert('Please enter the ad name, choose a photo or video, and add the link.');
+                return;
+            }
+            const linkValue = cleanAdLink(linkType, rawLink);
+            if (!linkValue) {
+                alert('Please enter a valid link, email or phone number for the ad.');
+                return;
+            }
+            if (!hasDb) { alert('Firebase is not connected.'); return; }
+            if (!adminSessionActive()) { alert('Your admin session has ended. Please open the admin page again.'); return; }
+
+            const btn = document.getElementById('post-ad-btn');
+            btn.disabled = true;
+            btn.innerText = 'Posting...';
+
+            const adRef = db.collection('ads').doc();
+            let storageRef = null;
+            try {
+                let mediaUrl = '';
+                if (pendingAdMedia.type === 'video') {
+                    storageRef = firebase.storage().ref('ads/' + adRef.id);
+                    const task = storageRef.put(pendingAdMedia.file, { contentType: pendingAdMedia.file.type || 'video/mp4' });
+                    await new Promise(function(resolve, reject) {
+                        task.on('state_changed', function(snap) {
+                            btn.innerText = 'Uploading video ' + Math.round((snap.bytesTransferred / snap.totalBytes) * 100) + '%';
+                        }, reject, resolve);
+                    });
+                    mediaUrl = await storageRef.getDownloadURL();
+                }
+
+                const batch = db.batch();
+                batch.set(adRef, {
+                    name: name,
+                    mediaType: pendingAdMedia.type,
+                    mediaUrl: mediaUrl,
+                    linkType: linkType,
+                    linkValue: linkValue,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                if (pendingAdMedia.type === 'image') {
+                    batch.set(db.collection('adImages').doc(adRef.id), {
+                        image: pendingAdMedia.dataUrl,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                await batch.commit();
+
+                showToast('Ad Posted Successfully!');
+                document.getElementById('ad-name').value = '';
+                document.getElementById('ad-link-value').value = '';
+                removeAdMedia();
+            } catch (error) {
+                console.error('Post ad error:', error);
+                if (storageRef) storageRef.delete().catch(function() {});
+                const code = (error && error.code) || 'unknown error';
+                if (String(code).indexOf('storage/') === 0) {
+                    alert('The video could not be uploaded (' + code + '). Check that Firebase Storage is switched on and its rules are published.');
+                } else if (code === 'permission-denied') {
+                    alert('Firebase refused this ad (permission denied). Publish the latest Firestore rules, including the ads sections, and make sure you are signed in as admin.');
+                } else {
+                    alert('Could not post the ad (' + code + '). Check your internet connection and try again.');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Post Ad';
+            }
+        }
+
+        function renderAdminAds() {
+            const wrapper = document.getElementById('admin-ads-wrapper');
+            wrapper.innerHTML = '';
+
+            if (ads.length === 0) {
+                wrapper.innerHTML = '<p style="color:var(--text-light); font-size:14px;">No ads yet.</p>';
+                return;
+            }
+
+            const linkLabels = { link: '🌐 Link', email: '📩 Email', whatsapp: '💬 WhatsApp', call: '📞 Call' };
+
+            ads.forEach(ad => {
+                const row = document.createElement('div');
+                row.className = 'admin-job-item';
+                row.innerHTML = `
+                    <div class="admin-job-info">
+                        <strong>${esc(ad.name)}</strong><br>
+                        ${ad.mediaType === 'video' ? '🎬 Video' : '🖼 Photo'} · ${esc(linkLabels[ad.linkType] || '🌐 Link')}<br>
+                        <small>👁 <span class="ad-stat-views" data-id="${esc(ad.id)}">0</span> views · 👆 <span class="ad-stat-clicks" data-id="${esc(ad.id)}">0</span> clicks</small>
+                    </div>
+                    <button class="delete-btn" type="button">Delete</button>
+                `;
+                row.querySelector('.delete-btn').addEventListener('click', function() { deleteAd(ad); });
+                wrapper.appendChild(row);
+            });
+            refreshAdStatsUI();
+        }
+
+        async function deleteAd(ad) {
+            if (!confirm('Delete this ad? Its views and clicks will be removed too.')) return;
+            if (!adminSessionActive()) { alert('Your admin session has ended. Please open the admin page again.'); return; }
+            try {
+                const tasks = [
+                    db.collection('ads').doc(ad.id).delete(),
+                    db.collection('adViews').doc(ad.id).delete(),
+                    db.collection('adClicks').doc(ad.id).delete()
+                ];
+                if (ad.mediaType === 'image') tasks.push(db.collection('adImages').doc(ad.id).delete());
+                await Promise.all(tasks);
+                if (ad.mediaType === 'video' && storageReady()) {
+                    firebase.storage().ref('ads/' + ad.id).delete().catch(function() {});
+                }
+                showToast('Ad Deleted');
+            } catch (error) {
+                console.error('Delete ad error:', error);
+                alert('Could not delete the ad. Make sure the latest Firestore rules are published.');
+            }
+        }
+
         // --- JOB PHOTO (admin) ---
         // Shrinks the photo so it fits safely in Firebase (keeps it sharp enough to read)
-        function compressImage(file) {
+        function compressImage(file, opts) {
+            opts = opts || {};
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onerror = () => reject(new Error('Could not read file'));
@@ -1551,7 +2130,7 @@
                     const img = new Image();
                     img.onerror = () => reject(new Error('Not a valid image'));
                     img.onload = () => {
-                        let maxW = 1600, quality = 0.8;
+                        let maxW = opts.maxW || 1600, quality = opts.quality || 0.8;
                         for (let i = 0; i < 12; i++) {
                             const scale = Math.min(1, maxW / img.width);
                             const canvas = document.createElement('canvas');
@@ -1562,7 +2141,7 @@
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
                             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                             const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                            if (dataUrl.length <= 850000) { resolve({ dataUrl: dataUrl, canvas: canvas }); return; }
+                            if (dataUrl.length <= (opts.maxChars || 850000)) { resolve({ dataUrl: dataUrl, canvas: canvas }); return; }
                             maxW = Math.round(maxW * 0.85);
                             quality = Math.max(0.55, quality - 0.04);
                         }
@@ -1785,9 +2364,9 @@
             } catch (error) {
                 console.error('Post job error:', error);
                 if (error && error.code === 'permission-denied') {
-                    alert('Firebase refused this post. Publish the new Firestore rules and make sure you are signed in as admin.');
+                    alert('Firebase refused this post (permission denied). Publish the latest Firestore rules, including the jobImages section, and make sure you are signed in as admin.');
                 } else {
-                    alert('Could not post the job. Check your internet connection and try again.');
+                    alert('Could not post the job (' + ((error && error.code) || 'unknown error') + '). Check your internet connection and try again.');
                 }
             } finally {
                 postBtn.disabled = false;
